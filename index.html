@@ -1,0 +1,704 @@
+<html lang="ru"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Английский Рядом | Точный уровень</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://code.iconify.design/iconify-icon/2.0.0/iconify-icon.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+/* Base Settings */
+* { box-sizing: border-box; }
+body {
+font-family: 'Montserrat', sans-serif;
+transition: background-color 0.8s ease, color 0.8s ease;
+overflow-x: hidden;
+-webkit-font-smoothing: antialiased;
+background-color: #ece4dc;
+margin: 0;
+padding: 0;
+}
+/* Hide scrollbar */
+::-webkit-scrollbar { width: 0px; background: transparent; }
+/* Utility */
+.text-balance { text-wrap: balance; }
+/* Animation: Blueprint Line */
+.blueprint-line {
+stroke-dasharray: 1000;
+stroke-dashoffset: 1000;
+transition: stroke-dashoffset 2s ease-out;
+}
+.group:hover .blueprint-line, .in-view .blueprint-line {
+stroke-dashoffset: 0;
+}
+/* Animation: Flashlight (Desktop Only) */
+.flashlight-mask {
+background: radial-gradient(
+circle min(18.75rem, 30vw) at var(--x) var(--y),
+rgba(255, 255, 255, 0.08),
+transparent 100%
+);
+}
+/* Animation: Reveal Text */
+.reveal-text {
+filter: blur(0.5rem);
+opacity: 0;
+transform: translateY(1.875rem);
+transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+will-change: transform, opacity, filter;
+}
+.reveal-text.active {
+filter: blur(0);
+opacity: 1;
+transform: translateY(0);
+}
+/* Horizontal Scroll Logic */
+.horizontal-outer { height: 350vh; }
+@media (min-width: 768px) { .horizontal-outer { height: 400vh; } }
+.horizontal-sticky {
+position: sticky;
+top: 0;
+height: 100vh;
+overflow: hidden;
+}
+/* Intro Animation */
+.intro-overlay { animation: intro-sequence 4s ease-in-out forwards; }
+.intro-logo { animation: logo-scale 4s ease-in-out forwards; }
+@keyframes intro-sequence {
+0%, 80% { opacity: 1; z-index: 9999; }
+100% { opacity: 0; z-index: -1; visibility: hidden; }
+}
+@keyframes logo-scale {
+0% { opacity: 0; transform: scale(0.9); }
+20% { opacity: 1; transform: scale(1); }
+80% { opacity: 1; transform: scale(1); }
+100% { opacity: 0; transform: scale(1.1); }
+}
+::selection { background: #fea0da; color: white; }
+.hero-text-enter { opacity: 0; animation: hero-fade-in 1.5s ease-out 3.5s forwards; }
+@keyframes hero-fade-in { from { opacity: 0; transform: translateY(1.25rem); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scroll-moments { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.animate-scroll-moments { animation: scroll-moments 40s linear infinite; }
+.hover\:pause:hover { animation-play-state: paused; }
+#anim-logo { transition: opacity 0.3s ease; }
+.nav-btn-overlap-hidden { opacity: 0 !important; pointer-events: none !important; }
+.rotate-x-10 { transform: perspective(62.5rem) rotateX(10deg); }
+.-rotate-x-10 { transform: perspective(62.5rem) rotateX(-10deg); }
+.container-fluid { width: 100%; max-width: 100%; padding-left: clamp(1rem, 4vw, 3rem); padding-right: clamp(1rem, 4vw, 3rem); }
+img, video, svg { max-width: 100%; height: auto; }
+</style>
+
+  <script src="https://www.aura.build/FxFilter.js"></script>
+</head>
+<body class="antialiased scroll-smooth" id="body-main">
+
+<!-- Intro Overlay -->
+<div class="intro-overlay fixed inset-0 bg-[#ece4dc] flex items-center justify-center pointer-events-none z-[9999]">
+<div class="intro-logo text-7xl font-medium tracking-tighter text-neutral-900">АР</div>
+</div>
+
+<!-- Navigation -->
+<nav class="fixed flex text-neutral-900 mix-blend-darken w-full z-50 pt-4 md:pt-6 pr-4 md:pr-6 pb-4 md:pb-6 pl-4 md:pl-6 top-0 left-0 items-center justify-between pointer-events-none">
+<div class="flex items-center">
+<div id="nav-logo-target" class="text-3xl md:text-4xl font-medium tracking-tighter opacity-0">АР</div>
+</div>
+</nav>
+
+<!-- FIXED BACKGROUND WAVES -->
+<div class="fixed bottom-0 left-0 w-full h-[50vh] md:h-[70vh] z-0 pointer-events-none overflow-hidden">
+<svg class="absolute bottom-0 left-0 w-full h-full transform transition-transform duration-75 ease-out parallax-layer text-[#22c55e]" data-speed="0.05" viewBox="0 0 1440 320" preserveAspectRatio="none"><path fill="currentColor" fill-opacity="0.8" d="M0,256L80,245.3C160,235,320,213,480,213.3C640,213,800,235,960,240C1120,245,1280,235,1360,229.3L1440,224L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path></svg>
+<svg class="absolute bottom-0 left-0 w-full h-full transform transition-transform duration-75 ease-out parallax-layer text-[#ef4444]" data-speed="0.1" viewBox="0 0 1440 320" preserveAspectRatio="none"><path fill="currentColor" fill-opacity="1" d="M0,160L60,149.3C120,139,240,117,360,117.3C480,117,600,139,720,160C840,181,960,203,1080,197.3C1200,192,1320,160,1380,144L1440,128L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path></svg>
+<svg class="absolute bottom-[-1.25rem] left-0 w-full h-[90%] transform transition-transform duration-75 ease-out parallax-layer text-[#f97316]" data-speed="0.2" viewBox="0 0 1440 320" preserveAspectRatio="none"><path fill="currentColor" fill-opacity="1" d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,160C960,139,1056,149,1152,160C1248,171,1344,181,1392,186.7L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>
+<svg class="absolute bottom-[-2.5rem] left-0 w-full h-[80%] transform transition-transform duration-75 ease-out parallax-layer text-[#3b82f6]" data-speed="0.35" viewBox="0 0 1440 320" preserveAspectRatio="none"><path fill="currentColor" fill-opacity="1" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,261.3C960,256,1056,224,1152,197.3C1248,171,1344,149,1392,138.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>
+</div>
+
+<!-- SECTION 1: HERO -->
+<section class="min-h-screen flex flex-col md:pb-0 md:justify-center z-10 pb-0 relative items-center justify-end" data-bg="#ece4dc" data-theme="dark" id="hero">
+<div class="flex flex-col md:pr-12 lg:pr-24 md:pt-[55vh] will-change-transform md:pr-6 md:pl-6 text-right w-full max-w-4xl z-10 ml-auto pt-32 pr-4 pb-32 pl-4 relative items-end" id="hero-text-container">
+<p class="md:mb-6 md:mt-4 md:tracking-wide md:text-base text-xs font-medium text-neutral-500 tracking-[0.15em] mt-4 mb-4 -translate-x-6 scale-125"><span class="text-xl md:text-2xl font-medium tracking-tighter text-neutral-900">А</span>НГЛИЙСКИЙ <span class="md:text-2xl text-xl font-medium text-neutral-900 tracking-tighter">Р</span>ЯДОМ</p>
+<h1 class="sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl leading-none md:mb-6 text-4xl font-light text-neutral-900 tracking-tight mb-6 scale-100">Точный срок.<br>Точная цена.<br>Точный&nbsp;уровень.</h1>
+<p class="sm:text-xl md:text-2xl lg:text-3xl leading-tight md:mb-8 text-balance text-lg font-light italic text-neutral-800 mb-6">
+Знаете, когда сдадите уровень, ещё до оплаты.
+</p>
+<div class="text-sm md:text-base lg:text-lg leading-relaxed font-light text-neutral-600 max-w-lg space-y-2">
+<p class="">Инновационный подход к изучению языка.</p>
+<p style="mask-image: linear-gradient(transparent, black 0%, black 60%, transparent);">Прозрачная система без скрытых платежей.</p>
+</div>
+<div class="mt-6 md:mt-10">
+<a href="#apply" class="text-[0.625rem] md:text-xs uppercase text-stone-950 tracking-widest border-gray-950 border rounded-full pt-2 md:pt-2.5 pr-4 md:pr-6 pb-2 md:pb-2.5 pl-4 md:pl-6 shadow-sm backdrop-blur-md -rotate-x-10 inline-flex items-center gap-2 hover:bg-stone-950 hover:text-white transition-colors">
+Начать тестирование <iconify-icon icon="solar:arrow-right-linear" stroke-width="1.5"></iconify-icon>
+</a>
+</div>
+</div>
+</section>
+
+<!-- SECTION 2: PHILOSOPHY -->
+<section class="min-h-screen flex z-20 md:pt-20 md:pr-6 lg:pr-12 md:pb-20 md:pl-6 lg:pl-12 pt-12 pr-4 pb-12 pl-4 relative items-center" data-bg="#ece4dc" data-theme="dark" id="philosophy">
+<div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-transparent to-[#ece4dc] -mt-32 pointer-events-none"></div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 lg:gap-24 w-full max-w-7xl mx-auto items-center">
+<div class="space-y-6 md:space-y-10 order-1 md:order-1" data-avoid-nav="true">
+<h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl reveal-text leading-[0.95] font-light text-neutral-900 tracking-tight text-balance">
+ПЕРСОНАЛЬНЫЙ ГРАФИК И РЕЗУЛЬТАТ
+</h2>
+<div class="space-y-6 md:space-y-8 text-base sm:text-lg md:text-xl font-light text-neutral-800">
+<p class="reveal-text leading-relaxed font-light">
+Мы создали формат, который подходит большинству студентов, упрощает процесс обучения и держит в тонусе благодаря постоянному анализу знаний.
+</p>
+<ul class="space-y-4">
+<li class="reveal-text flex items-start gap-3 pl-4 border-l-2 border-[#f19737]">
+<iconify-icon icon="solar:laptop-minimalistic-linear" class="text-xl mt-1 text-[#f19737] flex-shrink-0" stroke-width="1.5"></iconify-icon>
+<span class="">Современная онлайн платформа и интегрированный телеграм-бот.</span>
+</li>
+<li class="reveal-text flex items-start gap-3 pl-4 border-l-2 border-[#fea0da]">
+<iconify-icon icon="solar:target-linear" class="text-xl mt-1 text-[#fea0da] flex-shrink-0" stroke-width="1.5"></iconify-icon>
+<span class="">Уникальное тестирование уровня знания языка с точным прогнозом результата.</span>
+</li>
+<li class="reveal-text flex items-start gap-3 pl-4 border-l-2 border-[#215fc3]">
+<iconify-icon icon="solar:users-group-rounded-linear" class="text-xl mt-1 text-[#215fc3] flex-shrink-0" stroke-width="1.5"></iconify-icon>
+<span class="">Общий английский, корпоративное обучение и специализированные курсы.</span>
+</li>
+</ul>
+</div>
+</div>
+
+<div class="flex order-2 md:order-2 mt-8 md:mt-0 relative items-center justify-center" data-avoid-nav="true">
+<div class="relative w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 lg:w-[28.125rem] lg:h-[28.125rem] flex items-center justify-center scale-110">
+<div class="absolute inset-0 w-full h-full animate-[spin_16s_linear_infinite] text-[#215fc3]">
+<svg viewBox="0 0 100 100" width="100%" height="100%" stroke-width="3" class="w-[450px] h-[450px]" data-icon-replaced="true" style="width: 450px; height: 450px; color: rgb(33, 95, 195);">
+<defs>
+<path id="circle" d="M 50, 50 m -37, 0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0"></path>
+</defs>
+<text font-size="6" font-weight="500" letter-spacing="1.5" fill="currentColor" class="">
+<textPath xlink:href="#circle" class="">
+ТЕХНОЛОГИИ • РЕЗУЛЬТАТ • СИСТЕМА • ПРОГРЕСС •
+</textPath>
+</text>
+</svg>
+</div>
+
+<div class="overflow-hidden contrast-125 flex sm:w-40 sm:h-40 md:w-56 md:h-56 lg:w-72 lg:h-72 md:ring-8 [--fx-filter:blur(10px)_liquid-glass(0,10)_saturate(1.25)_noise(0.5,1,0)] bg-transparent opacity-100 w-32 h-32 z-10 rounded-full ring-white ring-4 relative shadow-2xl backdrop-blur-sm grayscale items-center justify-center">
+<iconify-icon icon="solar:diploma-verified-linear" class="md:text-9xl text-6xl text-neutral-800" stroke-width="1" width="128" height="128" style="color: rgb(38, 38, 38)">
+                
+                
+            
+                
+                
+            </iconify-icon>
+
+
+
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            
+                
+                
+            </div>
+
+</div>
+</div>
+</div>
+</section>
+
+<!-- SECTION 3: HORIZONTAL SCROLL -->
+<div id="programming-outer" class="horizontal-outer relative z-30" data-bg="#f19737" data-theme="dark">
+<div class="horizontal-sticky flex items-center overflow-hidden h-screen sticky top-0">
+<div class="flex md:pl-[10vw] h-full pl-4 md:pl-6 gap-0 items-center will-change-transform" id="horizontal-track">
+
+<!-- Intro Card -->
+<div class="min-w-[85vw] md:min-w-[30vw] flex flex-col shrink-0 text-neutral-900 pr-6 md:pr-10 justify-center">
+<h2 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight mb-6 md:mb-8 leading-none font-light">
+Этапы<br>Обучения
+</h2>
+<p class="text-lg sm:text-xl md:text-2xl opacity-80 max-w-xs font-light">
+Прозрачный путь от первого теста до получения сертификата.
+</p>
+<div class="flex items-center gap-3 mt-6 md:mt-10 text-xs md:text-sm uppercase tracking-widest opacity-60 font-medium">
+<iconify-icon icon="solar:arrow-right-linear" stroke-width="1.5" class="w-4 h-4 md:w-5 md:h-5"></iconify-icon>
+<span class="md:hidden">Листайте</span>
+<span class="hidden md:inline">Скролльте вниз</span>
+</div>
+</div>
+
+<!-- Step 1 Card -->
+<div class="min-w-[90vw] md:min-w-[55vw] h-[65vh] md:h-[75vh] bg-neutral-900 text-[#f19737] p-6 md:p-8 lg:p-14 mr-4 md:mr-6 lg:mr-16 flex flex-col justify-between relative overflow-hidden group rounded-2xl md:rounded-3xl shrink-0 shadow-2xl">
+<div class="absolute inset-0 w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 opacity-50 group-hover:scale-105 transition-transform duration-1000 ease-out"></div>
+<div class="relative z-10 border-b border-[#f19737]/30 pb-4 md:pb-6">
+<span class="text-xs md:text-sm uppercase tracking-widest border border-[#f19737] px-3 md:px-4 py-1 md:py-1.5 rounded-full bg-[#f19737]/10 backdrop-blur-md">
+Этап 01
+</span>
+<h3 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl mt-4 md:mt-6 tracking-tight font-light text-balance">
+Анализ и Планирование
+</h3>
+</div>
+<div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+<div>
+<h4 class="text-xs uppercase tracking-widest mb-2 md:mb-3 opacity-60">Процесс</h4>
+<p class="text-lg sm:text-xl md:text-2xl font-light">Тестирование и Консультация</p>
+</div>
+<div>
+<h4 class="text-xs uppercase tracking-widest mb-2 md:mb-3 opacity-60">Детали</h4>
+<ul class="space-y-2 md:space-y-3 text-base sm:text-lg md:text-xl font-light">
+<li class="flex items-start gap-2"><iconify-icon icon="solar:check-circle-linear" class="mt-1 flex-shrink-0" stroke-width="1.5"></iconify-icon> Уникальный тест через Telegram-бот</li>
+<li class="flex items-start gap-2"><iconify-icon icon="solar:check-circle-linear" class="mt-1 flex-shrink-0" stroke-width="1.5"></iconify-icon> Мгновенный результат</li>
+<li class="flex items-start gap-2"><iconify-icon icon="solar:check-circle-linear" class="mt-1 flex-shrink-0" stroke-width="1.5"></iconify-icon> График достижения цели и смета</li>
+</ul>
+</div>
+</div>
+</div>
+
+<!-- Step 2 Card -->
+<div class="min-w-[90vw] md:min-w-[55vw] h-[65vh] md:h-[75vh] bg-neutral-900 text-[#fea0da] p-6 md:p-8 lg:p-14 mr-4 md:mr-6 lg:mr-16 flex flex-col justify-between relative overflow-hidden group rounded-2xl md:rounded-3xl shrink-0 shadow-2xl">
+<div class="absolute inset-0 w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 opacity-50 group-hover:scale-105 transition-transform duration-1000 ease-out"></div>
+<div class="relative z-10 border-b border-[#fea0da]/30 pb-4 md:pb-6">
+<span class="text-xs md:text-sm uppercase tracking-widest border border-[#fea0da] px-3 md:px-4 py-1 md:py-1.5 rounded-full bg-[#fea0da]/10 backdrop-blur-md">
+Этап 02
+</span>
+<h3 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl mt-4 md:mt-6 tracking-tight font-light text-balance">
+Погружение и Обучение
+</h3>
+</div>
+<div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+<div>
+<h4 class="text-xs uppercase tracking-widest mb-2 md:mb-3 opacity-60">Процесс</h4>
+<p class="text-lg sm:text-xl md:text-2xl font-light">Индивидуальный трек</p>
+</div>
+<div>
+<h4 class="text-xs uppercase tracking-widest mb-2 md:mb-3 opacity-60">Детали</h4>
+<ul class="space-y-2 md:space-y-3 text-base sm:text-lg md:text-xl font-light">
+<li class="flex items-start gap-2"><iconify-icon icon="solar:check-circle-linear" class="mt-1 flex-shrink-0" stroke-width="1.5"></iconify-icon> Бесплатная беседа с методистом</li>
+<li class="flex items-start gap-2"><iconify-icon icon="solar:check-circle-linear" class="mt-1 flex-shrink-0" stroke-width="1.5"></iconify-icon> Интерактивный календарь тем</li>
+<li class="flex items-start gap-2"><iconify-icon icon="solar:check-circle-linear" class="mt-1 flex-shrink-0" stroke-width="1.5"></iconify-icon> Аутентичные учебные материалы</li>
+</ul>
+</div>
+</div>
+</div>
+
+<!-- Step 3 Card -->
+<div class="min-w-[90vw] md:min-w-[55vw] h-[65vh] md:h-[75vh] bg-neutral-900 text-[#215fc3] p-6 md:p-8 lg:p-14 mr-4 md:mr-6 lg:mr-[10vw] flex flex-col justify-between relative overflow-hidden group rounded-2xl md:rounded-3xl shrink-0 shadow-2xl">
+<div class="absolute inset-0 w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-900 opacity-50 group-hover:scale-105 transition-transform duration-1000 ease-out"></div>
+<div class="relative z-10 border-b border-[#215fc3]/30 pb-4 md:pb-6">
+<span class="text-xs md:text-sm uppercase tracking-widest border border-[#215fc3] px-3 md:px-4 py-1 md:py-1.5 rounded-full bg-[#215fc3]/10 backdrop-blur-md">
+Этап 03
+</span>
+<h3 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl mt-4 md:mt-6 tracking-tight font-light text-balance">
+Оценка и Сертификация
+</h3>
+</div>
+<div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+<div>
+<h4 class="text-xs uppercase tracking-widest mb-2 md:mb-3 opacity-60">Процесс</h4>
+<p class="text-lg sm:text-xl md:text-2xl font-light">Подтверждение уровня</p>
+</div>
+<div>
+<h4 class="text-xs uppercase tracking-widest mb-2 md:mb-3 opacity-60">Детали</h4>
+<ul class="space-y-2 md:space-y-3 text-base sm:text-lg md:text-xl font-light">
+<li class="flex items-start gap-2"><iconify-icon icon="solar:check-circle-linear" class="mt-1 flex-shrink-0" stroke-width="1.5"></iconify-icon> Финальный тест знаний</li>
+<li class="flex items-start gap-2"><iconify-icon icon="solar:check-circle-linear" class="mt-1 flex-shrink-0" stroke-width="1.5"></iconify-icon> Оценка независимым ботом</li>
+<li class="flex items-start gap-2"><iconify-icon icon="solar:check-circle-linear" class="mt-1 flex-shrink-0" stroke-width="1.5"></iconify-icon> Лицензионный сертификат</li>
+</ul>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- SECTION 4: THE TEAM -->
+<section class="md:py-24 md:px-6 overflow-hidden min-h-screen flex z-30 pt-12 pr-4 pb-12 pl-4 relative items-center" data-bg="#111827" data-theme="light" id="night">
+<div id="flashlight" class="absolute inset-0 pointer-events-none z-0 flashlight-mask opacity-0 transition-opacity duration-500 hidden md:block" style="--x: 197px; --y: 394.453125px;"></div>
+<div class="text-white w-full max-w-6xl z-10 mx-auto relative">
+<h2 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-9xl tracking-tight mb-12 md:mb-20 text-center font-light">
+КТО МЫ
+</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 md:pt-16 border-white/20 border-t pt-12 gap-x-12 gap-y-12">
+<div class="reveal-text">
+<div class="flex gap-4 md:gap-6 md:mb-8 mb-6 gap-x-4 gap-y-4 items-center">
+  <img src="https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/ae48665a-ee7f-4af1-ae20-e38f7eb9d891_800w.jpg?w=800&amp;q=80" alt="Дарья Тимохина" class="md:w-20 md:h-20 flex-shrink-0 -translate-x-4 w-16 h-16 object-cover border-white/20 border-2 rounded-full shadow-lg translate-x-12 scale-150">
+  <div class="">
+    <h3 class="md:text-3xl text-2xl font-light tracking-tight translate-x-16">Дарья Тимохина</h3>
+    <p class="md:text-base text-balance text-sm font-light text-[#fea0da] mt-1 translate-x-16">Основатель школы "Английский рядом"</p>
+  </div>
+</div>
+<div class="space-y-6 md:space-y-8 pl-0 md:pl-12">
+<div class="">
+<p class="text-lg sm:text-xl md:text-2xl font-light text-balance text-white/90">
+Лингвист-переводчик, преподаватель иностранных языков с двумя высшими образованиями МГЛУ им. Мориса Тореза.
+</p>
+</div>
+<div class="">
+<span class="text-xs md:text-sm uppercase tracking-widest text-neutral-400 block mb-2">Компетенции</span>
+<p class="text-lg sm:text-xl md:text-2xl text-[#fea0da] font-light">
+Свободное владение тремя языками: английский, французский, испанский.
+</p>
+</div>
+</div>
+</div>
+
+<div class="reveal-text delay-200">
+<div class="flex gap-3 md:gap-4 md:mb-8 mb-6 translate-x-8 gap-x-3 gap-y-3 items-center">
+<iconify-icon icon="solar:lightbulb-linear" class="md:w-8 md:h-8 md:text-4xl text-3xl text-[#808bc2] w-6 h-6" stroke-width="1.5" width="32" height="32" style="color: rgb(128, 139, 194)"></iconify-icon>
+<h3 class="md:text-3xl text-2xl font-light tracking-tight">Подход</h3>
+</div>
+<div class="space-y-4 md:space-y-6 pl-0 md:pl-12">
+<p class="text-lg sm:text-xl md:text-2xl border-l-2 border-white/20 pl-4 md:pl-6 py-2 font-light text-balance">
+Спустя годы преподавания в собственной студии и развития онлайн обучения, мы пришли к идеальному формату.
+</p>
+<p class="text-lg sm:text-xl md:text-2xl border-l-2 border-white/20 pl-4 md:pl-6 py-2 font-light text-balance">
+Каждый курс имеет интерактивный календарь с темами, уровнем усвоения и полезными советами, подстроенный индивидуально.
+</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- SECTION 5: PROGRAMS -->
+<section class="min-h-screen md:pt-24 md:pr-6 md:pb-24 md:pl-6 z-30 pt-12 pr-4 pb-12 pl-4 relative" data-bg="#1FA863" data-theme="light" id="stay">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-12 md:mb-20 text-white">
+<h2 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight mb-4 md:mb-6 font-light">
+ПРОГРАММЫ
+</h2>
+<p class="text-lg sm:text-xl md:text-2xl opacity-90 font-light px-4 text-balance">
+Детальная и прозрачная смета формируется после прохождения тестирования.
+</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6" data-avoid-nav="true">
+<!-- Card 1 -->
+<div class="group relative bg-[#146338] p-6 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl min-h-[26.25rem] flex flex-col justify-between hover:-translate-y-2 transition-transform duration-300 border border-white/10 shadow-lg">
+<svg class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+<rect x="2" y="2" width="99%" height="98%" rx="22" fill="none" stroke="white" stroke-width="1.5" class="blueprint-line opacity-30 group-hover:opacity-100"></rect>
+</svg>
+<div class="">
+<div class="flex justify-between items-start mb-4 md:mb-6">
+<h3 class="text-2xl md:text-3xl text-white font-light leading-tight">Общий<br>Английский</h3>
+<iconify-icon icon="solar:book-linear" class="text-white text-3xl md:text-4xl" stroke-width="1.5"></iconify-icon>
+</div>
+<p class="text-white/70 italic text-sm md:text-base mb-6 md:mb-8">Фундаментальные знания.</p>
+<ul class="text-white space-y-3 md:space-y-4 mb-6 md:mb-8">
+<li class="flex items-center gap-2 md:gap-3 text-sm md:text-base font-light">
+<iconify-icon icon="solar:check-circle-linear" class="text-[#f19737] flex-shrink-0 text-xl" stroke-width="1.5"></iconify-icon> Для детей
+</li>
+<li class="flex items-center gap-2 md:gap-3 text-sm md:text-base font-light">
+<iconify-icon icon="solar:check-circle-linear" class="text-[#f19737] flex-shrink-0 text-xl" stroke-width="1.5"></iconify-icon> Для подростков
+</li>
+<li class="flex items-center gap-2 md:gap-3 text-sm md:text-base font-light">
+<iconify-icon icon="solar:check-circle-linear" class="text-[#f19737] flex-shrink-0 text-xl" stroke-width="1.5"></iconify-icon> Для взрослых
+</li>
+</ul>
+</div>
+</div>
+
+<!-- Card 2 -->
+<div class="group relative bg-[#146338] p-6 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl min-h-[26.25rem] flex flex-col justify-between hover:-translate-y-2 transition-transform duration-300 border border-white/10 shadow-lg">
+<svg class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+<rect x="2" y="2" width="99%" height="98%" rx="22" fill="none" stroke="white" stroke-width="1.5" class="blueprint-line opacity-30 group-hover:opacity-100"></rect>
+</svg>
+<div class="">
+<div class="flex justify-between items-start mb-4 md:mb-6">
+<h3 class="text-2xl md:text-3xl text-white font-light leading-tight">Профильные<br>Курсы</h3>
+<iconify-icon icon="solar:briefcase-linear" class="text-white text-3xl md:text-4xl" stroke-width="1.5"></iconify-icon>
+</div>
+<p class="text-white/70 italic text-sm md:text-base mb-6 md:mb-8">Для карьерного роста.</p>
+<ul class="text-white space-y-3 md:space-y-4 mb-6 md:mb-8">
+<li class="flex items-center gap-2 md:gap-3 text-sm md:text-base font-light">
+<iconify-icon icon="solar:check-circle-linear" class="text-[#f19737] flex-shrink-0 text-xl" stroke-width="1.5"></iconify-icon> IT и Маркетинг
+</li>
+<li class="flex items-center gap-2 md:gap-3 text-sm md:text-base font-light">
+<iconify-icon icon="solar:check-circle-linear" class="text-[#f19737] flex-shrink-0 text-xl" stroke-width="1.5"></iconify-icon> Финансы и Закупки
+</li>
+<li class="flex items-center gap-2 md:gap-3 text-sm md:text-base font-light">
+<iconify-icon icon="solar:check-circle-linear" class="text-[#f19737] flex-shrink-0 text-xl" stroke-width="1.5"></iconify-icon> Авиация и Туризм
+</li>
+</ul>
+</div>
+</div>
+
+<!-- Card 3 -->
+<div class="group relative bg-[#146338] p-6 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl min-h-[26.25rem] flex flex-col justify-between hover:-translate-y-2 transition-transform duration-300 border border-white/10 shadow-lg">
+<svg class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+<rect x="2" y="2" width="99%" height="98%" rx="22" fill="none" stroke="white" stroke-width="1.5" class="blueprint-line opacity-30 group-hover:opacity-100"></rect>
+</svg>
+<div>
+<div class="flex justify-between items-start mb-4 md:mb-6">
+<h3 class="text-2xl md:text-3xl text-white font-light leading-tight">B2B<br>Обучение</h3>
+<iconify-icon icon="solar:buildings-linear" class="text-white text-3xl md:text-4xl" stroke-width="1.5"></iconify-icon>
+</div>
+<p class="text-white/70 italic text-sm md:text-base mb-6 md:mb-8">Корпоративный формат.</p>
+<ul class="text-white space-y-3 md:space-y-4 mb-6 md:mb-8">
+<li class="flex items-center gap-2 md:gap-3 text-sm md:text-base font-light">
+<iconify-icon icon="solar:check-circle-linear" class="text-[#f19737] flex-shrink-0 text-xl" stroke-width="1.5"></iconify-icon> Групповые занятия
+</li>
+<li class="flex items-center gap-2 md:gap-3 text-sm md:text-base font-light">
+<iconify-icon icon="solar:check-circle-linear" class="text-[#f19737] flex-shrink-0 text-xl" stroke-width="1.5"></iconify-icon> Отчетность прогресса
+</li>
+<li class="flex items-center gap-2 md:gap-3 text-sm md:text-base font-light">
+<iconify-icon icon="solar:check-circle-linear" class="text-[#f19737] flex-shrink-0 text-xl" stroke-width="1.5"></iconify-icon> Адаптация под нишу
+</li>
+</ul>
+</div>
+</div>
+
+</div>
+</div>
+</section>
+
+<!-- SECTION 6: APPLY -->
+<section class="min-h-[70vh] flex md:py-24 md:px-6 z-30 pt-12 pr-4 pb-12 pl-4 relative items-center justify-center" data-bg="#ece4dc" data-theme="dark" id="apply">
+<div class="absolute inset-0 overflow-hidden pointer-events-none">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[37.5rem] h-[37.5rem] bg-gradient-to-r from-[#f19737]/10 via-[#fea0da]/10 to-[#215fc3]/10 blur-3xl rounded-full opacity-60"></div>
+</div>
+<div class="max-w-2xl w-full mx-auto text-center relative z-10">
+<h2 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-tight text-neutral-900 mb-4 md:mb-6">
+Узнайте свой уровень <span class="font-medium text-[#215fc3]">прямо сейчас</span>
+</h2>
+<p class="text-base md:text-lg text-neutral-600 mb-8 md:mb-12 font-light max-w-md mx-auto px-4">
+Пройдите уникальное тестирование в нашем Telegram боте и получите мгновенный результат со сметой.
+</p>
+<div class="relative group max-w-sm mx-auto">
+<div class="absolute -inset-1 bg-gradient-to-r from-[#215fc3] to-[#fea0da] rounded-xl md:rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-1000"></div>
+<a href="/t.me/eng_next" class="flex items-center justify-center gap-3 hover:bg-[#1a4da1] transition-all md:rounded-xl md:px-8 md:py-5 md:text-lg text-base font-medium text-white tracking-wide bg-[#215fc3] w-full rounded-lg pt-4 pr-6 pb-4 pl-6 relative shadow-xl">
+<iconify-icon icon="solar:plain-linear" stroke-width="1.5" class="text-2xl"></iconify-icon>
+Написать в Telegram
+</a>
+</div>
+<p class="mt-6 md:mt-8 text-xs text-neutral-400 uppercase tracking-widest opacity-70 font-medium">
+Тестирование займет не более 15 минут
+</p>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer class="z-40 py-12 md:py-16 overflow-hidden px-4 md:px-6 relative border-t border-neutral-300/50" data-bg="#ece4dc" data-theme="dark" id="contacts">
+<div class="flex flex-col md:flex-row gap-8 md:gap-12 max-w-7xl mx-auto items-center md:items-start justify-between">
+<div class="flex-1 text-center md:text-left space-y-4">
+<div class="text-2xl font-medium tracking-tighter text-neutral-900 mb-2">АР</div>
+<p class="text-sm font-medium text-neutral-600 tracking-wide max-w-xs mx-auto md:mx-0 text-balance">
+Школа иностранных языков «Английский Рядом». Лицензированное обучение.
+</p>
+<div class="uppercase text-xs font-medium tracking-widest opacity-50 mt-4">© 2026 Английский Рядом</div>
+</div>
+
+<div class="flex-1 flex flex-col md:items-end text-center md:text-right space-y-4">
+<a href="tel:+74951426657" class="text-lg md:text-xl font-light hover:text-[#f19737] transition-colors tracking-tight text-neutral-900">
++7 (495) 142 66 57
+</a>
+<a href="mailto:eng.club.012@gmail.com" class="text-sm md:text-base font-light hover:text-[#f19737] transition-colors text-neutral-600 flex items-center justify-center md:justify-end gap-2">
+<iconify-icon icon="solar:letter-linear" stroke-width="1.5"></iconify-icon> eng.club.012@gmail.com
+</a>
+<div class="flex gap-4 items-center justify-center md:justify-end mt-2">
+<a href="/t.me/eng_next" class="hover:text-[#215fc3] transition-colors text-neutral-500 bg-white rounded-full pt-2 pr-2 pb-2 pl-2 shadow-sm">
+<iconify-icon icon="solar:plain-linear" class="text-xl block" stroke-width="1.5"></iconify-icon>
+</a>
+<a href="#" class="text-neutral-500 hover:text-[#215fc3] transition-colors p-2 bg-white rounded-full shadow-sm">
+<iconify-icon icon="solar:notes-linear" class="text-xl block" stroke-width="1.5"></iconify-icon>
+</a>
+</div>
+</div>
+</div>
+</footer>
+
+<!-- Fixed Logo Animation Overlay -->
+<div id="anim-logo" class="fixed top-0 left-0 z-50 pointer-events-none mix-blend-darken flex items-center justify-center overflow-hidden" style="width: 444px; height: 444px;">
+<div class="text-[min(30vw,200px)] flex leading-none font-medium text-neutral-900 tracking-tighter w-full h-full items-center justify-center" style="font-size: 36px;">АР</div>
+</div>
+
+<script>
+const body = document.getElementById('body-main');
+const sections = document.querySelectorAll('section, div[data-bg], footer');
+const parallaxLayers = document.querySelectorAll('.parallax-layer');
+const hOuter = document.getElementById('programming-outer');
+const hTrack = document.getElementById('horizontal-track');
+const nightSection = document.getElementById('night');
+const flashlight = document.getElementById('flashlight');
+
+// 1. Reveal Animations & BG Change
+const observer = new IntersectionObserver((entries) => {
+entries.forEach(entry => {
+if (entry.isIntersecting) {
+const bg = entry.target.getAttribute('data-bg');
+const theme = entry.target.getAttribute('data-theme');
+if(bg) body.style.backgroundColor = bg;
+if (theme === 'light') {
+body.classList.remove('text-neutral-900');
+body.classList.add('text-white');
+} else {
+body.classList.remove('text-white');
+body.classList.add('text-neutral-900');
+}
+requestAnimationFrame(() => {
+const reveals = entry.target.querySelectorAll('.reveal-text,.blueprint-line');
+reveals.forEach((el, index) => {
+setTimeout(() => {
+el.classList.add('active', 'in-view');
+}, index * 100);
+});
+});
+}
+});
+}, { threshold: 0.15, rootMargin: "-10% 0px -10% 0px" });
+sections.forEach(sec => observer.observe(sec));
+
+// 2. Parallax & Horizontal Scroll
+window.addEventListener('scroll', () => {
+const scrollY = window.scrollY;
+requestAnimationFrame(() => {
+parallaxLayers.forEach(layer => {
+const speed = parseFloat(layer.getAttribute('data-speed'));
+layer.style.transform = `translateY(${scrollY * speed}px)`;
+});
+if (hOuter && hTrack) {
+const offsetTop = hOuter.offsetTop;
+const hHeight = hOuter.offsetHeight;
+const viewHeight = window.innerHeight;
+if (scrollY >= offsetTop && scrollY <= (offsetTop + hHeight - viewHeight)) {
+const percentage = (scrollY - offsetTop) / (hHeight - viewHeight);
+const trackWidth = hTrack.scrollWidth;
+const viewportWidth = window.innerWidth;
+if(trackWidth > viewportWidth) {
+const translateX = percentage * (trackWidth - viewportWidth);
+hTrack.style.transform = `translateX(-${translateX}px)`;
+}
+} else if (scrollY < offsetTop) {
+hTrack.style.transform = `translateX(0px)`;
+}
+}
+});
+}, { passive: true });
+
+// 3. Desktop Flashlight
+if (nightSection && flashlight) {
+nightSection.addEventListener('mousemove', (e) => {
+const rect = nightSection.getBoundingClientRect();
+flashlight.style.setProperty('--x', `${e.clientX - rect.left}px`);
+flashlight.style.setProperty('--y', `${e.clientY - rect.top}px`);
+flashlight.style.opacity = '1';
+});
+nightSection.addEventListener('mouseleave', () => {
+flashlight.style.opacity = '0';
+});
+}
+
+// 4. Custom Text Logo Animation Logic
+(function() {
+const animLogo = document.getElementById('anim-logo');
+const targetLogo = document.getElementById('nav-logo-target');
+const heroText = document.getElementById('hero-text-container');
+const collisionObstacles = document.querySelectorAll('[data-avoid-nav="true"]');
+
+function updateLogoAndCollision() {
+if (!animLogo || !targetLogo) return;
+const scrollY = window.scrollY;
+const viewportHeight = window.innerHeight;
+const viewportWidth = window.innerWidth;
+const scrollRange = viewportHeight * 0.6;
+const progress = Math.min(Math.max(scrollY / scrollRange, 0), 1);
+const ease = 1 - Math.pow(1 - progress, 3);
+const targetRect = targetLogo.getBoundingClientRect();
+
+if (targetRect.width === 0 && progress < 1) return;
+
+const startWidth = viewportWidth < 768 ? viewportWidth * 0.8 : 444;
+const startHeight = startWidth;
+const startTop = (viewportHeight * 0.4) - (startHeight / 2);
+const startLeft = (viewportWidth * 0.5) - (startWidth / 2);
+
+const currentTop = startTop + (targetRect.top - startTop) * ease;
+const currentLeft = startLeft + (targetRect.left - startLeft) * ease;
+const currentWidth = startWidth + (targetRect.width - startWidth) * ease;
+const currentHeight = startHeight + (targetRect.height - startHeight) * ease;
+
+animLogo.style.transform = `translate(${currentLeft}px, ${currentTop}px)`;
+animLogo.style.width = `${currentWidth}px`;
+animLogo.style.height = `${currentHeight}px`;
+
+// Scale text inside
+const textElement = animLogo.querySelector('div');
+const startFontSize = Math.min(viewportWidth * 0.3, 200);
+const targetFontSize = parseFloat(window.getComputedStyle(targetLogo).fontSize);
+const currentFontSize = startFontSize + (targetFontSize - startFontSize) * ease;
+textElement.style.fontSize = `${currentFontSize}px`;
+
+if (heroText) {
+heroText.style.opacity = progress;
+heroText.style.transform = `translateX(${(1 - ease) * 50}px)`;
+}
+
+const logoRect = animLogo.getBoundingClientRect();
+let logoHidden = false;
+
+collisionObstacles.forEach(obs => {
+const obsRect = obs.getBoundingClientRect();
+if (!(logoRect.right < obsRect.left || logoRect.left > obsRect.right || logoRect.bottom < obsRect.top || logoRect.top > obsRect.bottom)) {
+logoHidden = true;
+}
+});
+
+animLogo.style.opacity = logoHidden ? '0' : '1';
+}
+
+window.addEventListener('scroll', updateLogoAndCollision, { passive: true });
+window.addEventListener('resize', updateLogoAndCollision);
+const initInterval = setInterval(updateLogoAndCollision, 100);
+setTimeout(() => clearInterval(initInterval), 2000);
+updateLogoAndCollision();
+})();
+</script>
+
+
+</body></html>
