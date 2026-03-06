@@ -1,0 +1,931 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Proficiency Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&amp;display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 3D Transform Utilities from Festival */
+        .rotate-x-10 { transform: perspective(800px) rotateX(10deg); }
+        .-rotate-x-10 { transform: perspective(800px) rotateX(-10deg); }
+    </style>
+</head>
+<body class="scroll-smooth antialiased bg-[#ece4dc] text-neutral-900 min-h-screen flex flex-col relative overflow-x-hidden" id="body-main">
+
+    <!-- FIXED BACKGROUND LANDSCAPE -->
+    <div class="fixed bottom-0 left-0 w-full h-[60vh] md:h-[85vh] z-0 pointer-events-none overflow-hidden">
+        <svg class="absolute bottom-[-10%] md:bottom-[-20%] left-0 w-full h-[120%] transform transition-transform duration-75 ease-out" viewBox="0 0 1440 800" preserveAspectRatio="none">
+            <path fill="#a78bfa" d="M500,800 L850,250 C950,150 1100,200 1250,500 L1440,800 V800 H500 Z"></path>
+        </svg>
+        <svg class="absolute bottom-[-5%] md:bottom-[-15%] left-0 w-full h-[115%] transform transition-transform duration-75 ease-out" viewBox="0 0 1440 800" preserveAspectRatio="none">
+            <path fill="#f472b6" d="M-100,800 L250,150 C350,50 550,200 750,600 L1000,800 H-100 Z"></path>
+        </svg>
+        <svg class="absolute bottom-0 left-0 w-full h-[110%] transform transition-transform duration-75 ease-out" viewBox="0 0 1440 800" preserveAspectRatio="none">
+            <path fill="#3b82f6" d="M-100,800 C150,550 450,450 750,550 C1050,650 1250,450 1500,800 V800 H-100 Z"></path>
+        </svg>
+        <svg class="absolute bottom-[-2%] left-0 w-full h-[105%] transform transition-transform duration-75 ease-out" viewBox="0 0 1440 800" preserveAspectRatio="none">
+            <path fill="#22c55e" d="M-100,800 C200,650 500,800 800,600 C1100,400 1350,650 1500,800 H-100 Z"></path>
+        </svg>
+        <svg class="absolute bottom-[-5%] left-0 w-full h-[100%] transform transition-transform duration-75 ease-out" viewBox="0 0 1440 800" preserveAspectRatio="none">
+            <path fill="#facc15" d="M-100,800 C50,600 300,550 550,800 Z"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M-50,750 C50,650 200,600 350,780"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M-80,780 C20,680 170,640 300,800"></path>
+            <path fill="#fb923c" d="M400,800 C550,550 900,500 1100,800 Z"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M450,750 C580,580 850,550 1000,780"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M480,780 C600,620 820,590 950,800"></path>
+            <path fill="#ef4444" d="M950,800 C1100,580 1350,550 1500,800 V800 Z"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M1000,750 C1120,620 1300,600 1450,780"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M1030,780 C1140,660 1280,640 1420,800"></path>
+        </svg>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed flex text-neutral-900 w-full z-50 pt-4 md:pt-6 pr-4 md:pr-6 pb-4 md:pb-6 pl-4 md:pl-6 top-0 left-0 items-center justify-between pointer-events-none">
+        <div class="flex items-center">
+            <div class="pointer-events-auto text-xl font-semibold tracking-widest uppercase">
+                АР
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="results.html" id="results-link" class="hidden pointer-events-auto uppercase hover:scale-105 transition-all duration-300 inline-block text-xs md:text-sm font-semibold text-neutral-700 tracking-widest bg-white/60 backdrop-blur-md rounded-full pt-2 md:pt-3 pr-4 md:pr-6 pb-2 md:pb-3 pl-4 md:pl-6 shadow-lg">
+                Результаты
+            </a>
+            <a href="#" onclick="goToHome(); return false;" class="pointer-events-auto uppercase hover:scale-105 transition-all duration-300 inline-block text-xs md:text-sm font-semibold text-white tracking-widest bg-[#215fc3] rounded-full pt-2 md:pt-3 pr-4 md:pr-6 pb-2 md:pb-3 pl-4 md:pl-6 shadow-lg">
+                Пройти тест
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="flex-1 flex flex-col pt-24 pb-12 relative w-full h-full z-10">
+
+        <!-- ================= SECTION A: AUTH ================= -->
+        <section id="auth-section" class="flex-1 flex flex-col items-center justify-center p-4 md:p-6 fade-in">
+            <div class="text-center mb-8 md:mb-12 max-w-2xl mx-auto px-4">
+                <p class="text-xs md:text-sm uppercase font-semibold text-neutral-500 tracking-[0.15em] md:tracking-[0.25em] mb-4">
+                    50 вопросов | 30-40 минут
+                </p>
+                <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-none font-light text-neutral-900 tracking-tight mb-4">
+                    Entrance Testing
+                </h1>
+                <p class="text-lg md:text-2xl font-light italic text-neutral-800">
+                    Discover your level. Reimagine learning.
+                </p>
+            </div>
+
+            <div class="w-full max-w-md">
+                <div class="bg-neutral-900 text-white rounded-2xl md:rounded-3xl shadow-2xl p-6 md:p-10 relative overflow-hidden group">
+                    <!-- Subtle inner glow -->
+                    <div class="absolute -top-24 -right-24 w-48 h-48 bg-[#f19737]/20 blur-3xl rounded-full pointer-events-none"></div>
+
+                    <!-- Tabs -->
+                    <div class="relative z-10 flex p-1 bg-white/5 backdrop-blur-md rounded-lg mb-8 border border-white/10">
+                        <button id="tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2 text-xs uppercase tracking-widest font-semibold bg-white/10 text-white rounded-md transition-all border border-white/5">Вход</button>
+                        <button id="tab-register" onclick="switchAuthTab('register')" class="flex-1 py-2 text-xs uppercase tracking-widest font-semibold text-neutral-400 hover:text-white rounded-md transition-all">Регистрация</button>
+                    </div>
+
+                    <!-- Error Area -->
+                    <div id="auth-error" class="relative z-10 hidden mb-6 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs font-semibold tracking-wide text-red-400 uppercase"></div>
+
+                    <!-- Login Form -->
+                    <form id="form-login" class="space-y-6 relative z-10" onsubmit="handleLogin(event)">
+                        <div>
+                            <input type="email" required="" class="w-full px-4 py-3 text-base md:text-lg bg-white/5 border border-white/10 rounded-xl outline-none focus:border-[#f19737] focus:bg-white/10 transition-all text-white placeholder:text-neutral-500 placeholder:font-light" placeholder="Email address">
+                        </div>
+                        <div>
+                            <input type="password" required="" class="w-full px-4 py-3 text-base md:text-lg bg-white/5 border border-white/10 rounded-xl outline-none focus:border-[#f19737] focus:bg-white/10 transition-all text-white placeholder:text-neutral-500 placeholder:font-light" placeholder="Password">
+                        </div>
+                        <button type="submit" class="w-full hover:bg-[#1a4da1] transition-all whitespace-nowrap font-medium text-white tracking-widest uppercase bg-[#215fc3] rounded-xl px-6 py-4 shadow-lg text-sm">
+                            Access Portal
+                        </button>
+                    </form>
+
+                    <!-- Register Form -->
+                    <form id="form-register" class="space-y-6 hidden relative z-10" onsubmit="handleRegister(event)">
+                        <div>
+                            <input type="email" required="" class="w-full px-4 py-3 text-base md:text-lg bg-white/5 border border-white/10 rounded-xl outline-none focus:border-[#f19737] focus:bg-white/10 transition-all text-white placeholder:text-neutral-500 placeholder:font-light" placeholder="Email address">
+                        </div>
+                        <div>
+                            <input type="password" required="" id="reg-password" onkeyup="checkStrength()" class="w-full px-4 py-3 text-base md:text-lg bg-white/5 border border-white/10 rounded-xl outline-none focus:border-[#f19737] focus:bg-white/10 transition-all text-white placeholder:text-neutral-500 placeholder:font-light" placeholder="Create password">
+                            <div class="flex gap-2 mt-3">
+                                <div id="str-1" class="h-1 flex-1 rounded-full bg-white/10 transition-colors"></div>
+                                <div id="str-2" class="h-1 flex-1 rounded-full bg-white/10 transition-colors"></div>
+                                <div id="str-3" class="h-1 flex-1 rounded-full bg-white/10 transition-colors"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <input type="password" required="" id="reg-confirm" class="w-full px-4 py-3 text-base md:text-lg bg-white/5 border border-white/10 rounded-xl outline-none focus:border-[#f19737] focus:bg-white/10 transition-all text-white placeholder:text-neutral-500 placeholder:font-light" placeholder="Confirm password">
+                        </div>
+                        <button type="submit" class="w-full hover:bg-[#d9852f] transition-all whitespace-nowrap font-medium text-neutral-900 tracking-widest uppercase bg-[#f19737] rounded-xl px-6 py-4 shadow-lg text-sm">
+                            Join Now
+                        </button>
+                    </form>
+
+                    <!-- Divider -->
+                    <div class="relative my-8 text-center z-10">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
+                        <span class="relative px-4 text-xs font-semibold tracking-widest uppercase text-neutral-400 bg-neutral-900">Or sign in with</span>
+                    </div>
+
+                    <!-- Social -->
+                    <div class="grid grid-cols-1 gap-4 relative z-10">
+                        <button onclick="signInWithProvider('google')" class="flex items-center justify-center gap-2 border border-white/10 bg-white/5 rounded-xl py-3 text-sm font-semibold text-white hover:bg-white/10 hover:border-[#f19737]/50 transition-colors">
+                            <iconify-icon icon="solar:global-linear" width="18" stroke-width="1.5"></iconify-icon> Continue with Google
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SECTION B: TEST ================= -->
+        <section id="test-section" class="hidden flex-1 flex-col justify-center px-4 md:px-6 w-full max-w-4xl mx-auto fade-in">
+            
+            <!-- Header Stats -->
+            <div class="mb-8 w-full">
+                <div class="flex items-end justify-between mb-4">
+                    <div>
+                        <span class="text-xs md:text-sm uppercase tracking-widest border border-[#f19737] px-3 md:px-4 py-1 md:py-1.5 rounded-full bg-[#f19737]/10 text-[#f19737] backdrop-blur-md">
+                            Вопрос <span id="q-current">1</span> / <span id="q-total">50</span>
+                        </span>
+                    </div>
+                    <div class="text-right flex items-center gap-4">
+                        <div class="hidden sm:flex text-sm font-semibold text-neutral-600 items-center gap-2 bg-white/40 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/50">
+                            <iconify-icon icon="solar:clock-circle-linear" width="18" stroke-width="1.5" class="text-[#215fc3]"></iconify-icon> <span id="timer">00:00</span>
+                        </div>
+                        <div class="bg-white/40 backdrop-blur-md border border-white/50 px-4 py-1.5 rounded-full text-xs font-semibold text-neutral-800 uppercase tracking-widest shadow-sm">
+                            Уровень: <span id="q-level" class="text-[#215fc3]">A1</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="h-1.5 w-full bg-neutral-900/10 backdrop-blur-sm rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-[#215fc3] w-[2%] transition-all duration-500 ease-out"></div>
+                </div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-neutral-900 text-white border border-white/10 rounded-2xl md:rounded-3xl p-8 md:p-12 lg:p-16 shadow-2xl mb-8 flex-1 flex flex-col justify-center min-h-[400px] relative overflow-hidden">
+                <!-- Atmospheric background element -->
+                <div class="absolute inset-0 bg-gradient-to-br from-[#215fc3]/10 via-transparent to-[#fea0da]/5 pointer-events-none"></div>
+
+                <h3 id="question-text" class="text-2xl sm:text-3xl md:text-5xl font-light tracking-tight text-white mb-10 md:mb-16 leading-tight relative z-10">
+                    Loading Question...
+                </h3>
+
+                <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 relative z-10">
+                    <!-- Options injected via JS -->
+                </div>
+            </div>
+
+            <!-- Navigation Controls -->
+            <div class="flex items-center justify-between">
+                <button onclick="prevQuestion()" id="btn-prev" class="px-6 py-3 text-xs uppercase tracking-widest font-semibold text-neutral-600 hover:text-neutral-900 transition-colors disabled:opacity-30 disabled:pointer-events-none flex items-center gap-2 bg-white/40 backdrop-blur-sm border border-white/50 rounded-full hover:bg-white/80">
+                    <iconify-icon icon="solar:arrow-left-linear" width="18" stroke-width="1.5"></iconify-icon> Назад
+                </button>
+                <button onclick="nextQuestion()" id="btn-next" disabled="" class="px-8 py-3 bg-[#f19737] text-neutral-900 rounded-full text-xs font-semibold uppercase tracking-widest hover:scale-105 transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed flex items-center gap-2 shadow-lg">
+                    Далее <iconify-icon icon="solar:arrow-right-linear" width="18" stroke-width="1.5"></iconify-icon>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= SECTION C: RESULTS ================= -->
+        <section id="results-section" class="hidden flex-1 flex-col py-12 px-4 md:px-6 w-full max-w-4xl mx-auto fade-in">
+            <div class="text-center mb-16">
+                <span class="text-[#f19737] uppercase tracking-widest text-sm font-semibold mb-4 block">
+                    Тест завершен
+                </span>
+                <h1 class="text-5xl md:text-7xl lg:text-8xl text-neutral-900 font-light tracking-tight mb-8">
+                    Your Results
+                </h1>
+                <div class="inline-flex items-center justify-center px-8 py-3 bg-neutral-900 text-white rounded-full text-sm md:text-base font-semibold tracking-widest uppercase shadow-xl">
+                    <span id="res-level-badge">B2 - Upper Intermediate</span>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-5 gap-8 mb-16">
+                <!-- Score Circle -->
+                <div class="md:col-span-2 bg-neutral-900 border border-white/10 rounded-3xl p-10 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-br from-[#215fc3]/10 to-[#fea0da]/10"></div>
+                    <div class="relative w-48 h-48 mb-6 z-10">
+                        <svg class="w-full h-full transform -rotate-90 drop-shadow-lg" viewBox="0 0 100 100">
+                            <defs>
+                                <linearGradient id="score-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#f19737"></stop>
+                                    <stop offset="100%" stop-color="#fea0da"></stop>
+                                </linearGradient>
+                            </defs>
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="6"></circle>
+                            <circle id="res-circle" cx="50" cy="50" r="45" fill="none" stroke="url(#score-grad)" stroke-width="6" stroke-linecap="round" stroke-dasharray="282.7" stroke-dashoffset="282.7" class="transition-all duration-1000 ease-out"></circle>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-white">
+                            <span id="res-score-text" class="text-5xl font-light tracking-tight">0%</span>
+                            <span class="text-[10px] uppercase tracking-widest mt-2 opacity-60 font-semibold">Точность</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Breakdown -->
+                <div class="md:col-span-3 bg-neutral-900 border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col justify-center text-white">
+                    <h4 class="text-sm font-semibold text-[#fea0da] uppercase tracking-widest mb-8">Детализация по уровням</h4>
+                    <div id="res-breakdown" class="space-y-6">
+                        <!-- Bars injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button onclick="resetTest()" class="inline-block bg-white text-neutral-900 px-10 py-4 rounded-full font-semibold text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-xl">
+                    Пройти заново
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Supabase Integration -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://dvszkmkxamilxocawbml.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_IPiv65AiEjXlmbebq-3jOQ_aVR-5_RY';
+        
+        // Initialize Supabase client
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Global state
+        let currentUser = null;
+
+        // Auth state listener
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+                currentUser = session.user;
+                console.log('User signed in:', currentUser.email);
+            } else if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                console.log('User signed out');
+            }
+        });
+
+        // Check if user is already logged in on page load
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session?.user) {
+                currentUser = session.user;
+                return true;
+            }
+            return false;
+        }
+    </script>
+
+    <!-- Questions Data -->
+    <script>
+        const allQuestions = [
+            // PART 1: A1 Level (Questions 1-8)
+            { id: 1, level: "A1", question: "Choose the correct verb form: \"She ______ to school by bus.\"", options: ["go", "goes", "going", "gone"], correct: 1 },
+            { id: 2, level: "A1", question: "Select the correct question word: \"______ is your name?\"", options: ["Who", "What", "Where", "When"], correct: 1 },
+            { id: 3, level: "A1", question: "Choose the opposite of \"big\":", options: ["small", "long", "tall", "short"], correct: 0 },
+            { id: 4, level: "A1", question: "Complete: \"I ______ like coffee because it's too bitter.\"", options: ["don't", "doesn't", "am not", "not"], correct: 0 },
+            { id: 5, level: "A1", question: "Which sentence is correct?", options: ["He is a student.", "He student is.", "Is he a students?", "A student he is."], correct: 0 },
+            { id: 6, level: "A1", question: "Select the correct preposition: \"The bag is ______ the table.\"", options: ["in", "on", "from", "into"], correct: 1 },
+            { id: 7, level: "A1", question: "What is the past tense of \"eat\"?", options: ["eated", "ate", "eaten", "eating"], correct: 1 },
+            { id: 8, level: "A1", question: "Choose the correct word: \"I have two ______.\"", options: ["childs", "children", "child", "childrens"], correct: 1 },
+
+            // PART 2: A2 Level (Questions 9-16)
+            { id: 9, level: "A2", question: "Select the correct comparative: \"This book is ______ than that one.\"", options: ["more good", "gooder", "better", "more better"], correct: 2 },
+            { id: 10, level: "A2", question: "Choose the correct preposition: \"We usually go swimming ______ Saturdays.\"", options: ["in", "on", "at", "by"], correct: 1 },
+            { id: 11, level: "A2", question: "Complete the sentence: \"I ______ to the cinema last night.\"", options: ["go", "gone", "went", "going"], correct: 2 },
+            { id: 12, level: "A2", question: "What do you call a person who travels to work every day?", options: ["A tourist", "A commuter", "A passenger", "A pedestrian"], correct: 1 },
+            { id: 13, level: "A2", question: "Select the correct phrasal verb: \"Please ______ your shoes before entering.\"", options: ["put on", "take off", "get on", "turn on"], correct: 1 },
+            { id: 14, level: "A2", question: "Choose the correct word: \"She speaks English ______.\"", options: ["good", "goodly", "well", "best"], correct: 2 },
+            { id: 15, level: "A2", question: "Complete the collocation: \"______ a decision\"", options: ["do", "make", "take", "have"], correct: 1 },
+            { id: 16, level: "A2", question: "Which question is correct?", options: ["Where you live?", "Where do you live?", "Where does you live?", "Where are you live?"], correct: 1 },
+
+            // PART 3: B1 Level (Questions 17-26)
+            { id: 17, level: "B1", question: "Choose the correct conditional: \"If I ______ enough money, I would buy a car.\"", options: ["have", "had", "would have", "will have"], correct: 1 },
+            { id: 18, level: "B1", question: "Which sentence uses the passive voice correctly?", options: ["The cake was baked by my mother.", "My mother was baked the cake.", "The cake is baking by my mother.", "My mother has baked by the cake."], correct: 0 },
+            { id: 19, level: "B1", question: "Select the correct phrasal verb: \"Could you ______ the music? It's too loud.\"", options: ["turn up", "turn down", "turn on", "turn over"], correct: 1 },
+            { id: 20, level: "B1", question: "Transform to reported speech: \"I will help you tomorrow,\" she said.", options: ["She said she will help me tomorrow.", "She said she would help me the next day.", "She said she helps me tomorrow.", "She said I would help her the next day."], correct: 1 },
+            { id: 21, level: "B1", question: "What does \"to beat around the bush\" mean?", options: ["To garden professionally", "To avoid getting to the point", "To win easily", "To be outdoors"], correct: 1 },
+            { id: 22, level: "B1", question: "Choose the most appropriate response: \"I heard you lost your job. I'm so sorry.\"", options: ["It's none of your business.", "Thank you. I'm trying to stay positive.", "Yes, I was terrible at it anyway.", "Why are you sorry?"], correct: 1 },
+            { id: 23, level: "B1", question: "Transform to passive: \"They are building a new hospital.\"", options: ["A new hospital is being built.", "A new hospital is building.", "A new hospital has been built.", "A new hospital was being built."], correct: 0 },
+            { id: 24, level: "B1", question: "Select the correct punctuation: \"______ , we must consider the costs.\"", options: ["However", "However,", "However;", "However:"], correct: 1 },
+            { id: 25, level: "B1", question: "Complete the sentence: \"Maria _________ English for five years before she moved to London.\"", options: ["would study", "studied", "has been studied", "had been studying"], correct: 3 },
+            { id: 26, level: "B1", question: "Choose the correct relative pronoun: \"The man ______ lives next door is a doctor.\"", options: ["which", "who", "whose", "whom"], correct: 1 },
+
+            // PART 4: B2 Level (Questions 27-36)
+            { id: 27, level: "B2", question: "Select the correct relative pronoun: \"The artist ______ paintings were stolen has been found.\"", options: ["who", "which", "whose", "whom"], correct: 2 },
+            { id: 28, level: "B2", question: "Which sentence respects the rule of inversion?", options: ["Never I have seen such beauty.", "Never have I seen such beauty.", "I have never seen such beauty.", "Have I never seen such beauty."], correct: 1 },
+            { id: 29, level: "B2", question: "Choose the synonym for \"ubiquitous\":", options: ["Rare", "Everywhere", "Hidden", "Ancient"], correct: 1 },
+            { id: 30, level: "B2", question: "Select the correct word: \"The company's ______ has increased by 20% this year.\"", options: ["money", "revenue", "cash", "payment"], correct: 1 },
+            { id: 31, level: "B2", question: "Which word fits best: \"The politician's speech was full of ______ promises.\"", options: ["hollow", "heavy", "hard", "high"], correct: 0 },
+            { id: 32, level: "B2", question: "Choose the correct meaning of \"pragmatic\":", options: ["Idealistic and dreamy", "Practical and realistic", "Emotional and sensitive", "Theoretical and abstract"], correct: 1 },
+            { id: 33, level: "B2", question: "Identify the error: \"Between you and I, this plan won't work.\"", options: ["Between should be Among", "I should be me", "won't should be will not", "No error"], correct: 1 },
+            { id: 34, level: "B2", question: "Which sentence demonstrates formal register for a business letter?", options: ["Hey, just checking in about that thing.", "What's up with the project? Let me know ASAP.", "I am writing to inquire regarding the matter discussed.", "Can't wait to hear from you!"], correct: 2 },
+            { id: 35, level: "B2", question: "Read the passage: \"The proliferation of remote work has altered urban landscapes.\" What does \"proliferation\" mean?", options: ["Reduction", "Rapid increase", "Professional development", "Government regulation"], correct: 1 },
+            { id: 36, level: "B2", question: "What does \"unprecedented\" suggest about vacancy rates?", options: ["They are unimportant", "They are lower than usual", "They are higher than ever before", "They are exactly as expected"], correct: 2 },
+
+            // PART 5: C1 Level (Questions 37-44)
+            { id: 37, level: "C1", question: "Identify the correct subjunctive form: \"It is essential that he ______ present at the meeting.\"", options: ["is", "be", "was", "would be"], correct: 1 },
+            { id: 38, level: "C1", question: "Which sentence demonstrates correct use of cleft sentences for emphasis?", options: ["It was the manager who fired the employee.", "The manager was who fired the employee.", "Who fired the employee was the manager.", "Fired the employee was the manager."], correct: 0 },
+            { id: 39, level: "C1", question: "Select the sentence with correct parallel structure:", options: ["She likes hiking, to swim, and biking.", "She likes hiking, swimming, and biking.", "She likes to hike, swimming, and to bike.", "She likes to hike, to swim, and biking."], correct: 1 },
+            { id: 40, level: "C1", question: "Which word means \"the ability to change without breaking\"?", options: ["Fragility", "Resilience", "Rigidity", "Vulnerability"], correct: 1 },
+            { id: 41, level: "C1", question: "Select the correct term: \"The ______ of his argument was that technology isolates us.\"", options: ["crux", "crust", "crush", "crusty"], correct: 0 },
+            { id: 42, level: "C1", question: "Which word is most appropriate for academic writing? \"The results ______ the hypothesis.\"", options: ["prove", "tell", "show", "substantiate"], correct: 3 },
+            { id: 43, level: "C1", question: "Which sentence is grammatically correct?", options: ["Neither the students nor the teacher were present.", "Neither the students nor the teacher was present.", "Neither the students or the teacher was present.", "Neither the students nor the teacher are present."], correct: 1 },
+            { id: 44, level: "C1", question: "Select the sentence that demonstrates the most appropriate use of modal verbs:", options: ["Sarah must have forgotten about the meeting.", "Sarah should have forgotten about the meeting.", "Sarah could have forgotten about the meeting.", "Sarah might forget about the meeting."], correct: 0 },
+
+            // PART 6: C2 Level (Questions 45-50)
+            { id: 45, level: "C2", question: "Complete the third conditional: \"Had I known about the delay, I ______ earlier.\"", options: ["would leave", "would have left", "had left", "will leave"], correct: 1 },
+            { id: 46, level: "C2", question: "Identify the error (if any): \"The data, which was carefully collected by the researchers over a three-year period, were analyzed extensively.\"", options: ["which was should be which were", "were analyzed should be was analyzed", "carefully collected should be careful collected", "No error"], correct: 3 },
+            { id: 47, level: "C2", question: "What is the meaning of \"ephemeral\"?", options: ["Eternal", "Lasting for a very short time", "Extremely important", "Gradually developing"], correct: 1 },
+            { id: 48, level: "C2", question: "Choose the word that best completes: \"Her ______ manner made everyone feel comfortable immediately.\"", options: ["abrasive", "affable", "ambiguous", "austere"], correct: 1 },
+            { id: 49, level: "C2", question: "What does \"zeitgeist\" refer to?", options: ["A specific historical event", "The general mood or spirit of a particular period", "A type of philosophy", "An economic theory"], correct: 1 },
+            { id: 50, level: "C2", question: "Choose the most logical completion: \"______ , the experiment yielded unexpected results.\"", options: ["Contrary to popular belief", "As expected", "Following the standard procedure", "Without any doubt"], correct: 0 }
+        ];
+
+        // Level order for calculations
+        const LEVEL_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
+        const LEVEL_WEIGHTS = [1, 2, 4, 8, 16, 32]; // Exponential weights
+        const LEVEL_BOUNDARIES = [0.08, 0.20, 0.35, 0.50, 0.70, 0.90];
+    </script>
+
+    <!-- JavaScript Logic & Integrations -->
+    <script>
+        const sampleQuestions = [
+            {
+                id: 1,
+                level: "A1",
+                question: "Choose the correct verb form: \"She ______ to school by bus.\"",
+                options: ["go", "goes", "going", "gone"],
+                correct: 1
+            },
+            {
+                id: 9,
+                level: "A2",
+                question: "Select the correct comparative: \"This book is ______ than that one.\"",
+                options: ["more good", "gooder", "better", "more better"],
+                correct: 2
+            },
+            {
+                id: 27,
+                level: "B2",
+                question: "Select the correct relative pronoun: \"The artist ______ paintings were stolen has been found.\"",
+                options: ["who", "which", "whose", "whom"],
+                correct: 2
+            },
+            {
+                id: 42,
+                level: "C1",
+                question: "Which phrase best completes the sentence? \"The committee decided to ______ the new policy immediately.\"",
+                options: ["put up with", "bring about", "implement", "get over"],
+                correct: 2
+            }
+        ];
+        
+        let testQuestions = [...allQuestions]; // Default to all 50 questions
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(testQuestions.length).fill(null);
+        let timerInterval;
+        let secondsElapsed = 0;
+
+        // Check auth on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Handle OAuth redirect - check for hash in URL
+            if (window.location.hash) {
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                const accessToken = hashParams.get('access_token');
+                
+                if (accessToken) {
+                    console.log('OAuth redirect detected, processing...');
+                    // Set session from URL hash
+                    const { data: { session }, error } = await supabaseClient.auth.getSession();
+                    if (error) {
+                        console.error('OAuth session error:', error);
+                    } else if (session) {
+                        currentUser = session.user;
+                        document.getElementById('results-link').classList.remove('hidden');
+                        // Clean up URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                }
+            }
+            
+            const isLoggedIn = await checkAuth();
+            if (isLoggedIn) {
+                console.log('User already logged in:', currentUser.email);
+                document.getElementById('results-link').classList.remove('hidden');
+                // Check for saved progress
+                const savedProgress = loadTestProgress();
+                if (savedProgress && savedProgress.userEmail === currentUser.email) {
+                    // Restore progress
+                    currentQuestionIndex = savedProgress.currentQuestionIndex;
+                    userAnswers = savedProgress.userAnswers;
+                    secondsElapsed = savedProgress.secondsElapsed || 0;
+                    console.log('Restored progress: question', currentQuestionIndex + 1, 'of', testQuestions.length);
+                    showSection('test-section');
+                    initTest(false); // Don't reset, use restored state
+                } else {
+                    // No saved progress, start fresh
+                    showSection('test-section');
+                    initTest(true);
+                }
+            }
+        });
+
+        // Save test progress to localStorage
+        function saveTestProgress() {
+            if (currentUser) {
+                const progress = {
+                    userEmail: currentUser.email,
+                    currentQuestionIndex: currentQuestionIndex,
+                    userAnswers: userAnswers,
+                    secondsElapsed: secondsElapsed,
+                    savedAt: new Date().toISOString()
+                };
+                localStorage.setItem('testProgress', JSON.stringify(progress));
+                console.log('Progress saved');
+            }
+        }
+
+        // Load test progress from localStorage
+        function loadTestProgress() {
+            try {
+                const saved = localStorage.getItem('testProgress');
+                return saved ? JSON.parse(saved) : null;
+            } catch (e) {
+                console.error('Error loading progress:', e);
+                return null;
+            }
+        }
+
+        // Clear test progress from localStorage
+        function clearTestProgress() {
+            localStorage.removeItem('testProgress');
+            console.log('Progress cleared');
+        }
+
+        function showSection(id) {
+            ['auth-section', 'test-section', 'results-section'].forEach(sec => {
+                document.getElementById(sec).classList.add('hidden');
+            });
+            const target = document.getElementById(id);
+            target.classList.remove('hidden');
+            
+            target.classList.remove('fade-in');
+            void target.offsetWidth; 
+            target.classList.add('fade-in');
+        }
+
+        function switchAuthTab(tab) {
+            const loginBtn = document.getElementById('tab-login');
+            const regBtn = document.getElementById('tab-register');
+            const formLogin = document.getElementById('form-login');
+            const formReg = document.getElementById('form-register');
+            const errorDiv = document.getElementById('auth-error');
+
+            // Clear error messages
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = '';
+
+            if (tab === 'login') {
+                loginBtn.className = "flex-1 py-2 text-xs uppercase tracking-widest font-semibold bg-white/10 text-white rounded-md transition-all border border-white/5";
+                regBtn.className = "flex-1 py-2 text-xs uppercase tracking-widest font-semibold text-neutral-400 hover:text-white rounded-md transition-all";
+                formLogin.classList.remove('hidden');
+                formReg.classList.add('hidden');
+                // Clear register form
+                document.getElementById('form-register').reset();
+            } else {
+                regBtn.className = "flex-1 py-2 text-xs uppercase tracking-widest font-semibold bg-white/10 text-white rounded-md transition-all border border-white/5";
+                loginBtn.className = "flex-1 py-2 text-xs uppercase tracking-widest font-semibold text-neutral-400 hover:text-white rounded-md transition-all";
+                formReg.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+                // Clear login form
+                document.getElementById('form-login').reset();
+            }
+        }
+
+        function checkStrength() {
+            const pw = document.getElementById('reg-password').value;
+            const str1 = document.getElementById('str-1');
+            const str2 = document.getElementById('str-2');
+            const str3 = document.getElementById('str-3');
+            
+            let strength = 0;
+            if (pw.length >= 8) strength++;
+            if (pw.match(/[A-Z]/) && pw.match(/[0-9]/)) strength++;
+            if (pw.match(/[^A-Za-z0-9]/)) strength++;
+
+            str1.className = `h-1 flex-1 rounded-full transition-colors ${strength >= 1 ? 'bg-[#f19737]' : 'bg-white/10'}`;
+            str2.className = `h-1 flex-1 rounded-full transition-colors ${strength >= 2 ? 'bg-[#fea0da]' : 'bg-white/10'}`;
+            str3.className = `h-1 flex-1 rounded-full transition-colors ${strength >= 3 ? 'bg-[#215fc3]' : 'bg-white/10'}`;
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const form = e.target;
+            const email = form.querySelector('input[type="email"]').value;
+            const password = form.querySelector('input[type="password"]').value;
+            const errorDiv = document.getElementById('auth-error');
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                currentUser = data.user;
+                console.log('Logged in:', currentUser.email);
+                document.getElementById('results-link').classList.remove('hidden');
+                showSection('test-section');
+                initTest();
+            } catch (error) {
+                errorDiv.textContent = error.message === 'Invalid login credentials'
+                    ? 'Неверный email или пароль'
+                    : error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const pw = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+            const email = document.querySelector('#form-register input[type="email"]').value;
+            const errorDiv = document.getElementById('auth-error');
+
+            // Validation
+            if (pw.length < 8) {
+                errorDiv.textContent = 'Пароль должен быть не менее 8 символов';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            if (pw !== confirm) {
+                errorDiv.textContent = 'Пароли не совпадают';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: pw
+                });
+
+                if (error) throw error;
+
+                currentUser = data.user;
+                console.log('Registered:', currentUser.email);
+                
+                // Check if email confirmation is required
+                if (data.user?.identities?.length === 0) {
+                    errorDiv.textContent = 'Такой аккаунт уже существует. Пожалуйста, войдите.';
+                    errorDiv.classList.remove('hidden');
+                    switchAuthTab('login');
+                    return;
+                }
+
+                alert('Пожалуйста, проверьте email для подтверждения регистрации.');
+                document.getElementById('results-link').classList.remove('hidden');
+                showSection('test-section');
+                initTest();
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        async function signInWithProvider(provider) {
+            try {
+                const { error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: provider,
+                    options: {
+                        redirectTo: window.location.href.split('#')[0] // Remove hash from current URL
+                    }
+                });
+                if (error) throw error;
+            } catch (error) {
+                const errorDiv = document.getElementById('auth-error');
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        async function signOut() {
+            await supabaseClient.auth.signOut();
+            currentUser = null;
+            showSection('auth-section');
+        }
+
+        function initTest(reset = true) {
+            // Use all 50 questions
+            testQuestions = [...allQuestions];
+            document.getElementById('q-total').textContent = testQuestions.length;
+            
+            if (reset) {
+                currentQuestionIndex = 0;
+                userAnswers = new Array(testQuestions.length).fill(null);
+                secondsElapsed = 0;
+                clearTestProgress();
+            }
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                const m = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+                const s = (secondsElapsed % 60).toString().padStart(2, '0');
+                document.getElementById('timer').textContent = `${m}:${s}`;
+            }, 1000);
+
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = testQuestions[currentQuestionIndex];
+            
+            document.getElementById('q-current').textContent = currentQuestionIndex + 1;
+            document.getElementById('q-level').textContent = q.level;
+            
+            const progress = ((currentQuestionIndex) / testQuestions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+
+            document.getElementById('question-text').textContent = q.question;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            q.options.forEach((opt, idx) => {
+                const isChecked = userAnswers[currentQuestionIndex] === idx ? 'checked' : '';
+                const html = `
+                    <label class="relative flex items-center cursor-pointer rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8 hover:bg-white/10 hover:border-white/20 transition-all group overflow-hidden">
+                        <input type="radio" name="answer" value="${idx}" class="peer sr-only" onchange="selectAnswer(${idx})" ${isChecked}>
+                        <span class="flex flex-1 relative z-10 text-lg md:text-xl font-light text-neutral-300 peer-checked:text-white transition-colors">${opt}</span>
+                        <iconify-icon icon="solar:check-circle-bold" class="relative z-10 hidden peer-checked:block text-[#f19737] transition-opacity ml-4" width="24"></iconify-icon>
+                        <span class="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent peer-checked:border-[#f19737]/50 transition-all z-10" aria-hidden="true"></span>
+                    </label>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+
+            document.getElementById('btn-prev').disabled = currentQuestionIndex === 0;
+            checkNextButton();
+        }
+
+        function selectAnswer(idx) {
+            userAnswers[currentQuestionIndex] = idx;
+            checkNextButton();
+            // Auto-save progress after each answer
+            saveTestProgress();
+        }
+
+        function checkNextButton() {
+            const btn = document.getElementById('btn-next');
+            if (userAnswers[currentQuestionIndex] !== null) {
+                btn.disabled = false;
+                btn.innerHTML = currentQuestionIndex === testQuestions.length - 1 
+                    ? `Завершить <iconify-icon icon="solar:flag-linear" width="18" stroke-width="1.5"></iconify-icon>`
+                    : `Далее <iconify-icon icon="solar:arrow-right-linear" width="18" stroke-width="1.5"></iconify-icon>`;
+            } else {
+                btn.disabled = true;
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < testQuestions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                finishTest();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
+
+        function calculateLevel(answers) {
+            // Count correct answers per level
+            const levelScores = { A1: { correct: 0, total: 0 }, A2: { correct: 0, total: 0 }, B1: { correct: 0, total: 0 }, B2: { correct: 0, total: 0 }, C1: { correct: 0, total: 0 }, C2: { correct: 0, total: 0 } };
+
+            answers.forEach((ans, idx) => {
+                const q = testQuestions[idx];
+                if (levelScores[q.level]) {
+                    levelScores[q.level].total++;
+                    if (ans === q.correct) {
+                        levelScores[q.level].correct++;
+                    }
+                }
+            });
+
+            // Calculate percentages for each level
+            const percentages = LEVEL_ORDER.map(lvl => {
+                const score = levelScores[lvl];
+                return score.total > 0 ? (score.correct / score.total) * 100 : 0;
+            });
+
+            /*
+            CEFR Calculation Algorithm (Exponential Weights with Cumulative Minimum):
+            - Weights: A1=1, A2=2, B1=4, B2=8, C1=16, C2=32
+            - Formula: score = Σ[min(%current, %all_below) × weight] / Σweights
+            - Boundaries: 0.08=A1, 0.20=A2, 0.35=B1, 0.50=B2, 0.70=C1, 0.90=C2, 1.00=C2
+            */
+
+            // Calculate cumulative minimum (foundation must be solid)
+            const effectiveScores = [];
+            let currentMin = 100;
+            for (const p of percentages) {
+                currentMin = Math.min(currentMin, p);
+                effectiveScores.push(currentMin);
+            }
+
+            // Weighted sum
+            const weights = LEVEL_WEIGHTS;
+            const weightedSum = effectiveScores.reduce((sum, score, i) => sum + score * weights[i], 0);
+            const maxPossible = weights.reduce((sum, w) => sum + 100 * w, 0);
+            const normalized = weightedSum / maxPossible;
+
+            // Determine level based on boundaries
+            const boundaries = LEVEL_BOUNDARIES;
+            const levels = ["A1", "A2", "B1", "B2", "C1", "C2"];
+            let finalLevel = "C2";
+            
+            for (let i = 0; i < boundaries.length; i++) {
+                if (normalized < boundaries[i]) {
+                    finalLevel = i === 0 ? "Below A1" : levels[i - 1];
+                    break;
+                }
+            }
+
+            // Calculate overall percentage for display
+            const totalCorrect = answers.filter((ans, idx) => ans === testQuestions[idx].correct).length;
+            const overallPercentage = Math.round((totalCorrect / testQuestions.length) * 100);
+
+            // Level descriptions
+            const levelDescriptions = {
+                "Below A1": "Beginner",
+                "A1": "Elementary",
+                "A2": "Pre-Intermediate",
+                "B1": "Intermediate",
+                "B2": "Upper-Intermediate",
+                "C1": "Advanced",
+                "C2": "Proficiency"
+            };
+
+            return {
+                percentage: overallPercentage,
+                normalizedScore: normalized,
+                badge: `${finalLevel} - ${levelDescriptions[finalLevel] || ""}`,
+                level: finalLevel,
+                breakdown: LEVEL_ORDER.reduce((acc, lvl) => {
+                    acc[lvl] = Math.round(percentages[LEVEL_ORDER.indexOf(lvl)]);
+                    return acc;
+                }, {})
+            };
+        }
+
+        async function finishTest() {
+            clearInterval(timerInterval);
+            const results = calculateLevel(userAnswers);
+
+            document.getElementById('res-level-badge').textContent = results.badge;
+
+            const circle = document.getElementById('res-circle');
+            const offset = 282.7 - (282.7 * results.percentage) / 100;
+
+            // Save results to Supabase first
+            if (currentUser) {
+                try {
+                    const { error } = await supabaseClient.from('test_results').insert({
+                        user_id: currentUser.id,
+                        user_email: currentUser.email,
+                        answers: userAnswers,
+                        score: results.percentage,
+                        normalized_score: results.normalizedScore,
+                        level: results.level,
+                        level_badge: results.badge,
+                        breakdown: results.breakdown,
+                        time_seconds: secondsElapsed,
+                        completed_at: new Date().toISOString()
+                    });
+
+                    if (error) {
+                        console.error('Error saving results:', error);
+                    } else {
+                        console.log('Results saved successfully');
+                    }
+                } catch (error) {
+                    console.error('Error saving results:', error);
+                }
+            }
+
+            // Clear progress only after results are saved
+            clearTestProgress();
+
+            showSection('results-section');
+
+            setTimeout(() => {
+                circle.style.strokeDashoffset = offset;
+                animateValue("res-score-text", 0, results.percentage, 1000);
+            }, 100);
+
+            const bdContainer = document.getElementById('res-breakdown');
+            bdContainer.innerHTML = '';
+
+            Object.entries(results.breakdown).forEach(([lvl, val]) => {
+                const html = `
+                    <div class="flex items-center gap-4">
+                        <span class="w-8 text-sm font-semibold text-white/50 tracking-widest">${lvl}</span>
+                        <div class="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-[#215fc3] via-[#fea0da] to-[#f19737] rounded-full transition-all duration-1000" style="width: 0%" data-target="${val}%"></div>
+                        </div>
+                        <span class="w-12 text-right text-sm font-light text-white">${val}%</span>
+                    </div>
+                `;
+                bdContainer.insertAdjacentHTML('beforeend', html);
+            });
+
+            setTimeout(() => {
+                bdContainer.querySelectorAll('[data-target]').forEach(bar => {
+                    bar.style.width = bar.getAttribute('data-target');
+                });
+            }, 300);
+        }
+
+        function goToHome() {
+            // Just navigate to home without clearing progress
+            showSection('auth-section');
+        }
+
+        function resetTest() {
+            // Reset all state
+            currentQuestionIndex = 0;
+            userAnswers = new Array(allQuestions.length).fill(null);
+            secondsElapsed = 0;
+            clearInterval(timerInterval);
+
+            // Clear saved progress
+            clearTestProgress();
+
+            // Clear auth forms for security
+            document.getElementById('form-login').reset();
+            document.getElementById('form-register').reset();
+            document.getElementById('auth-error').classList.add('hidden');
+
+            // Reset UI
+            document.getElementById('res-circle').style.strokeDashoffset = 282.7;
+            document.getElementById('res-score-text').textContent = '0%';
+            document.getElementById('timer').textContent = '00:00';
+
+            showSection('auth-section');
+        }
+
+        function animateValue(id, start, end, duration) {
+            if (start === end) return;
+            var range = end - start;
+            var current = start;
+            var increment = end > start? 1 : -1;
+            var stepTime = Math.abs(Math.floor(duration / range));
+            var obj = document.getElementById(id);
+            var timer = setInterval(function() {
+                current += increment;
+                obj.innerHTML = current + "%";
+                if (current == end) {
+                    clearInterval(timer);
+                }
+            }, stepTime);
+        }
+
+        window.addEventListener('beforeunload', function (e) {
+            if (!document.getElementById('test-section').classList.contains('hidden')) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+
+</body></html>

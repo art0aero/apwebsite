@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Results | English Proficiency</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .rotate-x-10 { transform: perspective(800px) rotateX(10deg); }
+        .-rotate-x-10 { transform: perspective(800px) rotateX(-10deg); }
+    </style>
+</head>
+<body class="scroll-smooth antialiased bg-[#ece4dc] text-neutral-900 min-h-screen flex flex-col relative overflow-x-hidden">
+
+    <!-- FIXED BACKGROUND LANDSCAPE -->
+    <div class="fixed bottom-0 left-0 w-full h-[60vh] md:h-[85vh] z-0 pointer-events-none overflow-hidden">
+        <svg class="absolute bottom-[-10%] md:bottom-[-20%] left-0 w-full h-[120%] transform transition-transform duration-75 ease-out" viewBox="0 0 1440 800" preserveAspectRatio="none">
+            <path fill="#a78bfa" d="M500,800 L850,250 C950,150 1100,200 1250,500 L1440,800 V800 H500 Z"></path>
+        </svg>
+        <svg class="absolute bottom-[-5%] md:bottom-[-15%] left-0 w-full h-[115%] transform transition-transform duration-75 ease-out" viewBox="0 0 1440 800" preserveAspectRatio="none">
+            <path fill="#f472b6" d="M-100,800 L250,150 C350,50 550,200 750,600 L1000,800 H-100 Z"></path>
+        </svg>
+        <svg class="absolute bottom-0 left-0 w-full h-[110%] transform transition-transform duration-75 ease-out" viewBox="0 0 1440 800" preserveAspectRatio="none">
+            <path fill="#3b82f6" d="M-100,800 C150,550 450,450 750,550 C1050,650 1250,450 1500,800 V800 H-100 Z"></path>
+        </svg>
+        <svg class="absolute bottom-[-2%] left-0 w-full h-[105%] transform transition-transform duration-75 ease-out" viewBox="0 0 1440 800" preserveAspectRatio="none">
+            <path fill="#22c55e" d="M-100,800 C200,650 500,800 800,600 C1100,400 1350,650 1500,800 H-100 Z"></path>
+        </svg>
+        <svg class="absolute bottom-[-5%] left-0 w-full h-[100%] transform transition-transform duration-75 ease-out" viewBox="0 0 1440 800" preserveAspectRatio="none">
+            <path fill="#facc15" d="M-100,800 C50,600 300,550 550,800 Z"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M-50,750 C50,650 200,600 350,780"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M-80,780 C20,680 170,640 300,800"></path>
+            <path fill="#fb923c" d="M400,800 C550,550 900,500 1100,800 Z"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M450,750 C580,580 850,550 1000,780"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M480,780 C600,620 820,590 950,800"></path>
+            <path fill="#ef4444" d="M950,800 C1100,580 1350,550 1500,800 V800 Z"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M1000,750 C1120,620 1300,600 1450,780"></path>
+            <path fill="none" stroke="white" stroke-width="3" opacity="0.6" d="M1030,780 C1140,660 1280,640 1420,800"></path>
+        </svg>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed flex text-neutral-900 w-full z-50 pt-4 md:pt-6 pr-4 md:pr-6 pb-4 md:pb-6 pl-4 md:pl-6 top-0 left-0 items-center justify-between pointer-events-none">
+        <div class="flex items-center">
+            <div class="pointer-events-auto text-xl font-semibold tracking-widest uppercase">
+                АР
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="test.html" id="take-test-btn" class="hidden pointer-events-auto uppercase hover:scale-105 transition-all duration-300 inline-block text-xs md:text-sm font-semibold text-white tracking-widest bg-[#215fc3] rounded-full pt-2 md:pt-3 pr-4 md:pr-6 pb-2 md:pb-3 pl-4 md:pl-6 shadow-lg">
+                Пройти тест
+            </a>
+            <button onclick="signOut()" id="logout-btn" class="hidden pointer-events-auto uppercase hover:scale-105 transition-all duration-300 inline-block text-xs md:text-sm font-semibold text-neutral-700 tracking-widest bg-white/60 backdrop-blur-md rounded-full pt-2 md:pt-3 pr-4 md:pr-6 pb-2 md:pb-3 pl-4 md:pl-6 shadow-lg">
+                Выйти
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="flex-1 flex flex-col pt-24 pb-12 relative w-full h-full z-10">
+
+        <!-- ================= AUTH SECTION ================= -->
+        <section id="auth-section" class="flex-1 flex flex-col items-center justify-center p-4 md:p-6 fade-in">
+            <div class="text-center mb-8 md:mb-12 max-w-2xl mx-auto px-4">
+                <p class="text-xs md:text-sm uppercase font-semibold text-neutral-500 tracking-[0.15em] md:tracking-[0.25em] mb-4">
+                    Ваш прогресс
+                </p>
+                <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-none font-light text-neutral-900 tracking-tight mb-4">
+                    Test Results
+                </h1>
+                <p class="text-lg md:text-2xl font-light italic text-neutral-800">
+                    Track your improvement over time.
+                </p>
+            </div>
+
+            <div class="w-full max-w-md">
+                <div class="bg-neutral-900 text-white rounded-2xl md:rounded-3xl shadow-2xl p-6 md:p-10 relative overflow-hidden group">
+                    <div class="absolute -top-24 -right-24 w-48 h-48 bg-[#f19737]/20 blur-3xl rounded-full pointer-events-none"></div>
+
+                    <!-- Tabs -->
+                    <div class="relative z-10 flex p-1 bg-white/5 backdrop-blur-md rounded-lg mb-8 border border-white/10">
+                        <button id="tab-login" onclick="switchAuthTab('login')" class="flex-1 py-2 text-xs uppercase tracking-widest font-semibold bg-white/10 text-white rounded-md transition-all border border-white/5">Вход</button>
+                        <button id="tab-register" onclick="switchAuthTab('register')" class="flex-1 py-2 text-xs uppercase tracking-widest font-semibold text-neutral-400 hover:text-white rounded-md transition-all">Регистрация</button>
+                    </div>
+
+                    <!-- Error Area -->
+                    <div id="auth-error" class="relative z-10 hidden mb-6 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs font-semibold tracking-wide text-red-400 uppercase"></div>
+
+                    <!-- Login Form -->
+                    <form id="form-login" class="space-y-6 relative z-10" onsubmit="handleLogin(event)">
+                        <div>
+                            <input type="email" required class="w-full px-4 py-3 text-base md:text-lg bg-white/5 border border-white/10 rounded-xl outline-none focus:border-[#f19737] focus:bg-white/10 transition-all text-white placeholder:text-neutral-500 placeholder:font-light" placeholder="Email address">
+                        </div>
+                        <div>
+                            <input type="password" required class="w-full px-4 py-3 text-base md:text-lg bg-white/5 border border-white/10 rounded-xl outline-none focus:border-[#f19737] focus:bg-white/10 transition-all text-white placeholder:text-neutral-500 placeholder:font-light" placeholder="Password">
+                        </div>
+                        <button type="submit" class="w-full hover:bg-[#1a4da1] transition-all whitespace-nowrap font-medium text-white tracking-widest uppercase bg-[#215fc3] rounded-xl px-6 py-4 shadow-lg text-sm">
+                            Access Results
+                        </button>
+                    </form>
+
+                    <!-- Register Form -->
+                    <form id="form-register" class="space-y-6 hidden relative z-10" onsubmit="handleRegister(event)">
+                        <div>
+                            <input type="email" required class="w-full px-4 py-3 text-base md:text-lg bg-white/5 border border-white/10 rounded-xl outline-none focus:border-[#f19737] focus:bg-white/10 transition-all text-white placeholder:text-neutral-500 placeholder:font-light" placeholder="Email address">
+                        </div>
+                        <div>
+                            <input type="password" required id="reg-password" onkeyup="checkStrength()" class="w-full px-4 py-3 text-base md:text-lg bg-white/5 border border-white/10 rounded-xl outline-none focus:border-[#f19737] focus:bg-white/10 transition-all text-white placeholder:text-neutral-500 placeholder:font-light" placeholder="Create password">
+                            <div class="flex gap-2 mt-3">
+                                <div id="str-1" class="h-1 flex-1 rounded-full bg-white/10 transition-colors"></div>
+                                <div id="str-2" class="h-1 flex-1 rounded-full bg-white/10 transition-colors"></div>
+                                <div id="str-3" class="h-1 flex-1 rounded-full bg-white/10 transition-colors"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <input type="password" required id="reg-confirm" class="w-full px-4 py-3 text-base md:text-lg bg-white/5 border border-white/10 rounded-xl outline-none focus:border-[#f19737] focus:bg-white/10 transition-all text-white placeholder:text-neutral-500 placeholder:font-light" placeholder="Confirm password">
+                        </div>
+                        <button type="submit" class="w-full hover:bg-[#d9852f] transition-all whitespace-nowrap font-medium text-neutral-900 tracking-widest uppercase bg-[#f19737] rounded-xl px-6 py-4 shadow-lg text-sm">
+                            Join Now
+                        </button>
+                    </form>
+
+                    <!-- Divider -->
+                    <div class="relative my-8 text-center z-10">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/10"></div></div>
+                        <span class="relative px-4 text-xs font-semibold tracking-widest uppercase text-neutral-400 bg-neutral-900">Or sign in with</span>
+                    </div>
+
+                    <!-- Social -->
+                    <div class="grid grid-cols-1 gap-4 relative z-10">
+                        <button onclick="signInWithProvider('google')" class="flex items-center justify-center gap-2 border border-white/10 bg-white/5 rounded-xl py-3 text-sm font-semibold text-white hover:bg-white/10 hover:border-[#f19737]/50 transition-colors">
+                            <iconify-icon icon="solar:global-linear" width="18" stroke-width="1.5"></iconify-icon> Continue with Google
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= RESULTS SECTION ================= -->
+        <section id="results-section" class="hidden flex-1 flex-col py-8 px-4 md:px-6 w-full max-w-6xl mx-auto fade-in">
+            
+            <!-- Header -->
+            <div class="text-center mb-12">
+                <span class="text-[#f19737] uppercase tracking-widest text-sm font-semibold mb-4 block">
+                    История тестов
+                </span>
+                <h1 class="text-4xl md:text-6xl lg:text-7xl text-neutral-900 font-light tracking-tight mb-4">
+                    Your Journey
+                </h1>
+                <p id="user-email" class="text-sm md:text-base text-neutral-600 font-medium"></p>
+            </div>
+
+            <!-- Stats Overview -->
+            <div id="stats-container" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
+                <div class="bg-neutral-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-xl">
+                    <iconify-icon icon="solar:clipboard-list-linear" class="text-[#f19737] mb-3" width="32"></iconify-icon>
+                    <div id="stat-total" class="text-3xl font-light text-white">0</div>
+                    <div class="text-xs uppercase tracking-widest text-neutral-400 mt-1">Всего тестов</div>
+                </div>
+                <div class="bg-neutral-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-xl">
+                    <iconify-icon icon="solar:trend-up-linear" class="text-[#215fc3] mb-3" width="32"></iconify-icon>
+                    <div id="stat-best" class="text-3xl font-light text-white">-</div>
+                    <div class="text-xs uppercase tracking-widest text-neutral-400 mt-1">Лучший уровень</div>
+                </div>
+                <div class="bg-neutral-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-xl">
+                    <iconify-icon icon="solar:target-linear" class="text-[#fea0da] mb-3" width="32"></iconify-icon>
+                    <div id="stat-avg" class="text-3xl font-light text-white">0%</div>
+                    <div class="text-xs uppercase tracking-widest text-neutral-400 mt-1">Средний балл</div>
+                </div>
+                <div class="bg-neutral-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-6 text-center shadow-xl">
+                    <iconify-icon icon="solar:clock-circle-linear" class="text-[#22c55e] mb-3" width="32"></iconify-icon>
+                    <div id="stat-time" class="text-3xl font-light text-white">-</div>
+                    <div class="text-xs uppercase tracking-widest text-neutral-400 mt-1">Ср. время</div>
+                </div>
+            </div>
+
+            <!-- Results List -->
+            <div id="results-list" class="space-y-4">
+                <!-- Results will be injected here -->
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading" class="hidden flex flex-col items-center justify-center py-20">
+                <iconify-icon icon="solar:spinner-2-linear" class="text-[#f19737] animate-spin" width="48"></iconify-icon>
+                <p class="text-neutral-600 mt-4 text-sm uppercase tracking-widest">Загрузка результатов...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20">
+                <iconify-icon icon="solar:inbox-linear" class="text-neutral-400 mb-4" width="64"></iconify-icon>
+                <h3 class="text-2xl font-light text-neutral-700 mb-2">Пока нет результатов</h3>
+                <p class="text-neutral-500 mb-6">Пройдите тест, чтобы увидеть свой прогресс</p>
+                <a href="test.html" class="inline-block bg-[#215fc3] text-white px-8 py-3 rounded-full font-semibold text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-lg">
+                    Пройти тест
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Supabase Integration -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://dvszkmkxamilxocawbml.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_IPiv65AiEjXlmbebq-3jOQ_aVR-5_RY';
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+
+        // Auth state listener
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+                currentUser = session.user;
+                console.log('User signed in:', currentUser.email);
+                document.getElementById('logout-btn').classList.remove('hidden');
+                loadResults();
+            } else if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                document.getElementById('logout-btn').classList.add('hidden');
+            }
+        });
+
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session?.user) {
+                currentUser = session.user;
+                return true;
+            }
+            return false;
+        }
+
+        // Check auth on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (window.location.hash) {
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                const accessToken = hashParams.get('access_token');
+                if (accessToken) {
+                    console.log('OAuth redirect detected');
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session) {
+                        currentUser = session.user;
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                }
+            }
+
+            const isLoggedIn = await checkAuth();
+            if (isLoggedIn) {
+                document.getElementById('logout-btn').classList.remove('hidden');
+                document.getElementById('take-test-btn').classList.remove('hidden');
+                document.getElementById('user-email').textContent = currentUser.email;
+                showSection('results-section');
+                loadResults();
+            }
+        });
+
+        function showSection(id) {
+            ['auth-section', 'results-section'].forEach(sec => {
+                document.getElementById(sec).classList.add('hidden');
+            });
+            const target = document.getElementById(id);
+            target.classList.remove('hidden');
+            target.classList.remove('fade-in');
+            void target.offsetWidth;
+            target.classList.add('fade-in');
+        }
+
+        function switchAuthTab(tab) {
+            const loginBtn = document.getElementById('tab-login');
+            const regBtn = document.getElementById('tab-register');
+            const formLogin = document.getElementById('form-login');
+            const formReg = document.getElementById('form-register');
+            const errorDiv = document.getElementById('auth-error');
+
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = '';
+
+            if (tab === 'login') {
+                loginBtn.className = "flex-1 py-2 text-xs uppercase tracking-widest font-semibold bg-white/10 text-white rounded-md transition-all border border-white/5";
+                regBtn.className = "flex-1 py-2 text-xs uppercase tracking-widest font-semibold text-neutral-400 hover:text-white rounded-md transition-all";
+                formLogin.classList.remove('hidden');
+                formReg.classList.add('hidden');
+                document.getElementById('form-register').reset();
+            } else {
+                regBtn.className = "flex-1 py-2 text-xs uppercase tracking-widest font-semibold bg-white/10 text-white rounded-md transition-all border border-white/5";
+                loginBtn.className = "flex-1 py-2 text-xs uppercase tracking-widest font-semibold text-neutral-400 hover:text-white rounded-md transition-all";
+                formReg.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+                document.getElementById('form-login').reset();
+            }
+        }
+
+        function checkStrength() {
+            const pw = document.getElementById('reg-password').value;
+            const str1 = document.getElementById('str-1');
+            const str2 = document.getElementById('str-2');
+            const str3 = document.getElementById('str-3');
+
+            let strength = 0;
+            if (pw.length >= 8) strength++;
+            if (pw.match(/[A-Z]/) && pw.match(/[0-9]/)) strength++;
+            if (pw.match(/[^A-Za-z0-9]/)) strength++;
+
+            str1.className = `h-1 flex-1 rounded-full transition-colors ${strength >= 1 ? 'bg-[#f19737]' : 'bg-white/10'}`;
+            str2.className = `h-1 flex-1 rounded-full transition-colors ${strength >= 2 ? 'bg-[#fea0da]' : 'bg-white/10'}`;
+            str3.className = `h-1 flex-1 rounded-full transition-colors ${strength >= 3 ? 'bg-[#215fc3]' : 'bg-white/10'}`;
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const form = e.target;
+            const email = form.querySelector('input[type="email"]').value;
+            const password = form.querySelector('input[type="password"]').value;
+            const errorDiv = document.getElementById('auth-error');
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                if (error) throw error;
+                currentUser = data.user;
+                document.getElementById('user-email').textContent = currentUser.email;
+                document.getElementById('logout-btn').classList.remove('hidden');
+                document.getElementById('take-test-btn').classList.remove('hidden');
+                showSection('results-section');
+                loadResults();
+            } catch (error) {
+                errorDiv.textContent = error.message === 'Invalid login credentials'
+                    ? 'Неверный email или пароль'
+                    : error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const pw = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+            const email = document.querySelector('#form-register input[type="email"]').value;
+            const errorDiv = document.getElementById('auth-error');
+
+            if (pw.length < 8) {
+                errorDiv.textContent = 'Пароль должен быть не менее 8 символов';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            if (pw !== confirm) {
+                errorDiv.textContent = 'Пароли не совпадают';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: pw
+                });
+                if (error) throw error;
+                currentUser = data.user;
+
+                if (data.user?.identities?.length === 0) {
+                    errorDiv.textContent = 'Такой аккаунт уже существует. Пожалуйста, войдите.';
+                    errorDiv.classList.remove('hidden');
+                    switchAuthTab('login');
+                    return;
+                }
+
+                alert('Пожалуйста, проверьте email для подтверждения регистрации.');
+                document.getElementById('user-email').textContent = currentUser.email;
+                document.getElementById('logout-btn').classList.remove('hidden');
+                document.getElementById('take-test-btn').classList.remove('hidden');
+                showSection('results-section');
+                loadResults();
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        async function signInWithProvider(provider) {
+            try {
+                const { error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: provider,
+                    options: {
+                        redirectTo: window.location.href.split('#')[0]
+                    }
+                });
+                if (error) throw error;
+            } catch (error) {
+                const errorDiv = document.getElementById('auth-error');
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        async function signOut() {
+            await supabaseClient.auth.signOut();
+            currentUser = null;
+            showSection('auth-section');
+        }
+
+        async function loadResults() {
+            if (!currentUser) return;
+
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results-list').innerHTML = '';
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('stats-container').classList.add('hidden');
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('test_results')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('completed_at', { ascending: false });
+
+                if (error) throw error;
+
+                document.getElementById('loading').classList.add('hidden');
+
+                if (!data || data.length === 0) {
+                    document.getElementById('empty-state').classList.remove('hidden');
+                    return;
+                }
+
+                document.getElementById('stats-container').classList.remove('hidden');
+                updateStats(data);
+                renderResults(data);
+            } catch (error) {
+                console.error('Error loading results:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('empty-state').classList.remove('hidden');
+            }
+        }
+
+        function updateStats(results) {
+            const total = results.length;
+            const avgScore = Math.round(results.reduce((sum, r) => sum + (r.score || 0), 0) / total);
+            
+            const levelOrder = ['Below A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+            const bestLevel = results.reduce((best, r) => {
+                const currentIdx = levelOrder.indexOf(r.level);
+                const bestIdx = levelOrder.indexOf(best);
+                return currentIdx > bestIdx ? r.level : best;
+            }, 'Below A1');
+
+            const avgTime = Math.round(results.reduce((sum, r) => sum + (r.time_seconds || 0), 0) / total / 60);
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-best').textContent = bestLevel;
+            document.getElementById('stat-avg').textContent = avgScore + '%';
+            document.getElementById('stat-time').textContent = avgTime + ' мин';
+        }
+
+        function renderResults(results) {
+            const container = document.getElementById('results-list');
+            container.innerHTML = '';
+
+            const levelColors = {
+                'Below A1': 'bg-gray-500',
+                'A1': 'bg-green-500',
+                'A2': 'bg-lime-500',
+                'B1': 'bg-yellow-500',
+                'B2': 'bg-orange-500',
+                'C1': 'bg-pink-500',
+                'C2': 'bg-purple-500'
+            };
+
+            results.forEach((result, index) => {
+                const date = new Date(result.completed_at);
+                const formattedDate = date.toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                const formattedTime = date.toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const minutes = Math.floor((result.time_seconds || 0) / 60);
+                const seconds = (result.time_seconds || 0) % 60;
+                const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                // Check if this is a Beginner level result
+                if (result.level === 'Beginner' || result.level === 'Below A1' || result.level === 'below a1' || result.level === 'beginner') {
+                    // Beginner (Below A1) - hardcoded exactly like Elementary but with A0 and Beginner
+                    const html = `
+                        <div class="bg-neutral-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl hover:scale-[1.02] transition-transform cursor-default">
+                            <div class="flex items-center justify-between flex-wrap gap-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 rounded-full bg-gray-500 flex items-center justify-center text-white font-bold text-base shadow-lg shrink-0" style="min-width: 56px;">
+                                        A0
+                                    </div>
+                                    <div>
+                                        <div class="text-white font-semibold text-lg">Beginner</div>
+                                        <div class="text-neutral-400 text-xs uppercase tracking-wider">${formattedDate} • ${formattedTime}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-6">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-light text-white">${result.score}%</div>
+                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Точность</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-light text-white">${timeStr}</div>
+                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Время</div>
+                                    </div>
+                                    <div class="w-px h-10 bg-white/10"></div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-light text-[#f19737]">#${index + 1}</div>
+                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Попытка</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', html);
+                } else {
+                    // All other levels (A1, A2, B1, B2, C1, C2)
+                    let level = result.level || 'A1';
+                    let levelDesc = level;
+                    
+                    if (result.level_badge && result.level_badge.includes(' - ')) {
+                        levelDesc = result.level_badge.split(' - ')[1];
+                    }
+                    
+                    const colorClass = levelColors[level] || 'bg-gray-500';
+
+                    const html = `
+                        <div class="bg-neutral-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl hover:scale-[1.02] transition-transform cursor-default">
+                            <div class="flex items-center justify-between flex-wrap gap-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-14 h-14 rounded-full ${colorClass} flex items-center justify-center text-white font-bold text-base shadow-lg shrink-0" style="min-width: 56px;">
+                                        ${level}
+                                    </div>
+                                    <div>
+                                        <div class="text-white font-semibold text-lg">${levelDesc}</div>
+                                        <div class="text-neutral-400 text-xs uppercase tracking-wider">${formattedDate} • ${formattedTime}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-6">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-light text-white">${result.score}%</div>
+                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Точность</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-light text-white">${timeStr}</div>
+                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Время</div>
+                                    </div>
+                                    <div class="w-px h-10 bg-white/10"></div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-light text-[#f19737]">#${index + 1}</div>
+                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Попытка</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', html);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
