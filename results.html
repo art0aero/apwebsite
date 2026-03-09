@@ -378,9 +378,20 @@
             try {
                 const { data, error } = await supabaseClient.auth.signUp({
                     email: email,
-                    password: pw
+                    password: pw,
+                    options: {
+                        emailRedirectTo: 'https://www.lcdk.ru/results.html'
+                    }
                 });
                 if (error) throw error;
+
+                // Проверяем, требует ли Supabase подтверждения email
+                if (data.user && !data.session) {
+                    errorDiv.textContent = 'Подтвердите email для входа. Проверьте почту.';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
                 currentUser = data.user;
 
                 if (data.user?.identities?.length === 0) {
@@ -390,7 +401,6 @@
                     return;
                 }
 
-                alert('Пожалуйста, проверьте email для подтверждения регистрации.');
                 document.getElementById('user-email').textContent = currentUser.email;
                 document.getElementById('logout-btn').classList.remove('hidden');
                 document.getElementById('take-test-btn').classList.remove('hidden');
@@ -407,7 +417,7 @@
                 const { error } = await supabaseClient.auth.signInWithOAuth({
                     provider: provider,
                     options: {
-                        redirectTo: window.location.href.split('#')[0]
+                        redirectTo: 'https://www.lcdk.ru/results.html'
                     }
                 });
                 if (error) throw error;

@@ -591,14 +591,24 @@
             try {
                 const { data, error } = await supabaseClient.auth.signUp({
                     email: email,
-                    password: pw
+                    password: pw,
+                    options: {
+                        emailRedirectTo: 'https://www.lcdk.ru/test.html'
+                    }
                 });
 
                 if (error) throw error;
 
+                // Проверяем, требует ли Supabase подтверждения email
+                if (data.user && !data.session) {
+                    errorDiv.textContent = 'Подтвердите email для входа. Проверьте почту.';
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+
                 currentUser = data.user;
                 console.log('Registered:', currentUser.email);
-                
+
                 // Check if email confirmation is required
                 if (data.user?.identities?.length === 0) {
                     errorDiv.textContent = 'Такой аккаунт уже существует. Пожалуйста, войдите.';
@@ -607,7 +617,6 @@
                     return;
                 }
 
-                alert('Пожалуйста, проверьте email для подтверждения регистрации.');
                 document.getElementById('results-link').classList.remove('hidden');
                 showSection('test-section');
                 initTest();
@@ -622,7 +631,7 @@
                 const { error } = await supabaseClient.auth.signInWithOAuth({
                     provider: provider,
                     options: {
-                        redirectTo: window.location.href.split('#')[0] // Remove hash from current URL
+                        redirectTo: 'https://www.lcdk.ru/test.html'
                     }
                 });
                 if (error) throw error;
