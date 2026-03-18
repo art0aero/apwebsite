@@ -374,10 +374,17 @@
             stats.classList.add('hidden');
 
             try {
+                if (!currentUser?.id) {
+                    loading.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+
                 const supabaseClient = authController.getClient();
                 const { data, error } = await supabaseClient
                     .from('test_results')
                     .select('*')
+                    .eq('user_id', currentUser.id)
                     .order('completed_at', { ascending: false });
 
                 loading.classList.add('hidden');
