@@ -11,6 +11,12 @@ type RequestPayload = {
   client_meta?: Record<string, unknown>;
 };
 
+type QuestionBankRow = {
+  id: number;
+  level: (typeof LEVEL_ORDER)[number];
+  correct_option: number;
+};
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -23,65 +29,12 @@ const LEVEL_BOUNDARIES = [0.08, 0.2, 0.35, 0.5, 0.7, 0.9];
 
 const LEVEL_DESCRIPTIONS: Record<string, string> = {
   'Below A1': 'Beginner',
-  A1: 'Elementary',
-  A2: 'Pre-Intermediate',
+  A1: 'Starter',
+  A2: 'Elementary',
   B1: 'Intermediate',
   B2: 'Upper-Intermediate',
   C1: 'Advanced',
   C2: 'Proficiency',
-};
-
-const QUESTION_BANK: Record<number, { level: (typeof LEVEL_ORDER)[number]; correct: number }> = {
-  1: { level: 'A1', correct: 1 },
-  2: { level: 'A1', correct: 1 },
-  3: { level: 'A1', correct: 0 },
-  4: { level: 'A1', correct: 0 },
-  5: { level: 'A1', correct: 0 },
-  6: { level: 'A1', correct: 1 },
-  7: { level: 'A1', correct: 1 },
-  8: { level: 'A1', correct: 1 },
-  9: { level: 'A2', correct: 2 },
-  10: { level: 'A2', correct: 1 },
-  11: { level: 'A2', correct: 2 },
-  12: { level: 'A2', correct: 1 },
-  13: { level: 'A2', correct: 1 },
-  14: { level: 'A2', correct: 2 },
-  15: { level: 'A2', correct: 1 },
-  16: { level: 'A2', correct: 1 },
-  17: { level: 'B1', correct: 1 },
-  18: { level: 'B1', correct: 0 },
-  19: { level: 'B1', correct: 1 },
-  20: { level: 'B1', correct: 1 },
-  21: { level: 'B1', correct: 1 },
-  22: { level: 'B1', correct: 1 },
-  23: { level: 'B1', correct: 0 },
-  24: { level: 'B1', correct: 1 },
-  25: { level: 'B1', correct: 3 },
-  26: { level: 'B1', correct: 1 },
-  27: { level: 'B2', correct: 2 },
-  28: { level: 'B2', correct: 1 },
-  29: { level: 'B2', correct: 1 },
-  30: { level: 'B2', correct: 1 },
-  31: { level: 'B2', correct: 0 },
-  32: { level: 'B2', correct: 1 },
-  33: { level: 'B2', correct: 1 },
-  34: { level: 'B2', correct: 2 },
-  35: { level: 'B2', correct: 1 },
-  36: { level: 'B2', correct: 2 },
-  37: { level: 'C1', correct: 1 },
-  38: { level: 'C1', correct: 0 },
-  39: { level: 'C1', correct: 1 },
-  40: { level: 'C1', correct: 1 },
-  41: { level: 'C1', correct: 0 },
-  42: { level: 'C1', correct: 3 },
-  43: { level: 'C1', correct: 1 },
-  44: { level: 'C1', correct: 0 },
-  45: { level: 'C2', correct: 1 },
-  46: { level: 'C2', correct: 3 },
-  47: { level: 'C2', correct: 1 },
-  48: { level: 'C2', correct: 1 },
-  49: { level: 'C2', correct: 1 },
-  50: { level: 'C2', correct: 0 },
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -94,7 +47,7 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-function calculateResult(answers: SubmittedAnswer[]) {
+function calculateResult(answers: SubmittedAnswer[], questionMap: Map<number, QuestionBankRow>) {
   const levelScores = {
     A1: { correct: 0, total: 0 },
     A2: { correct: 0, total: 0 },
@@ -107,11 +60,11 @@ function calculateResult(answers: SubmittedAnswer[]) {
   let totalCorrect = 0;
 
   for (const item of answers) {
-    const question = QUESTION_BANK[item.question_id];
+    const question = questionMap.get(item.question_id);
     if (!question) continue;
 
     levelScores[question.level].total += 1;
-    if (item.selected_option === question.correct) {
+    if (item.selected_option === question.correct_option) {
       levelScores[question.level].correct += 1;
       totalCorrect += 1;
     }
@@ -209,19 +162,62 @@ Deno.serve(async (req) => {
     }));
 
     for (const item of cleanedAnswers) {
-      if (!QUESTION_BANK[item.question_id]) {
-        return jsonResponse({ error: `Unknown question_id: ${item.question_id}` }, 400);
+      if (!Number.isInteger(item.question_id) || item.question_id <= 0) {
+        return jsonResponse({ error: `Invalid question_id: ${item.question_id}` }, 400);
       }
       if (!Number.isInteger(item.selected_option) || item.selected_option < 0 || item.selected_option > 3) {
         return jsonResponse({ error: `Invalid selected_option for question ${item.question_id}` }, 400);
       }
     }
 
-    const timeSeconds = Number(payload.time_seconds || 0);
-    const completedAt = new Date().toISOString();
-    const result = calculateResult(cleanedAnswers);
+    const uniqueQuestionIds = [...new Set(cleanedAnswers.map((item) => item.question_id))];
+    if (uniqueQuestionIds.length !== cleanedAnswers.length) {
+      return jsonResponse({ error: 'Duplicate question_id in payload' }, 400);
+    }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    const { data: questionRowsData, error: questionRowsError } = await adminClient
+      .from('question_bank')
+      .select('id,level,correct_option')
+      .in('id', uniqueQuestionIds)
+      .eq('is_active', true);
+
+    if (questionRowsError) {
+      return jsonResponse({ error: questionRowsError.message }, 500);
+    }
+
+    const questionRows = (questionRowsData ?? []) as QuestionBankRow[];
+    if (questionRows.length !== uniqueQuestionIds.length) {
+      return jsonResponse({ error: 'Some question IDs are invalid or inactive' }, 400);
+    }
+
+    const questionMap = new Map<number, QuestionBankRow>();
+    for (const row of questionRows) {
+      questionMap.set(Number(row.id), {
+        id: Number(row.id),
+        level: row.level,
+        correct_option: Number(row.correct_option),
+      });
+    }
+
+    const timeSeconds = Number(payload.time_seconds || 0);
+    const completedAt = new Date().toISOString();
+    const result = calculateResult(cleanedAnswers, questionMap);
+
+    const seenRows = uniqueQuestionIds.map((questionId) => ({
+      user_id: user.id,
+      question_id: questionId,
+      seen_at: completedAt,
+    }));
+
+    const { error: seenError } = await adminClient
+      .from('user_seen_questions')
+      .upsert(seenRows, { onConflict: 'user_id,question_id' });
+
+    if (seenError) {
+      return jsonResponse({ error: seenError.message }, 500);
+    }
 
     const { error: insertError } = await adminClient.from('test_results').insert({
       user_id: user.id,
