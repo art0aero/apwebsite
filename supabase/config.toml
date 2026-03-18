@@ -2,3 +2,6 @@ project_id = "dvszkmkxamilxocawbml"
 
 [functions.submit-test]
 verify_jwt = false
+
+[functions.get-test-questions]
+verify_jwt = false

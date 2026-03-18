@@ -1,6 +1,6 @@
 # submit-test Edge Function
 
-Server-side grading and saving of test results.
+Server-side grading and saving of test results using `question_bank` as the source of truth.
 
 ## Expected request body
 
@@ -38,3 +38,5 @@ This function uses env vars from Supabase project:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+
+It expects exactly 50 answers per submission and writes seen questions into `user_seen_questions`.
