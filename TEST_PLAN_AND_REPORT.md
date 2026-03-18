@@ -1,72 +1,43 @@
 # Test Plan and Report
 
-## Test Plan
+## Method
+Testing executed according to website-testing skill workflow:
+1. API baseline
+2. Smoke UI
+3. Core E2E flow (Playwright)
+4. Security checks (XSS / unsafe labels)
+5. Regression rerun
 
-### Scope
-- `test.html`: shared auth integration, login/register path, test flow, `submit-test` invocation.
-- `results.html`: shared auth integration, safe render from DB data.
-- `shared/auth.js`: common auth/session/token flow.
-- `supabase/functions/submit-test/index.ts`: server-side grading and persistence.
+## Scope
+- `results.html`: result filtering by user and level title rendering.
+- `submit-test` integration and auth flow stability.
 
-### Environment
-- Playwright Chromium (headless)
-- Local static host of project folder (`http://127.0.0.1:4173`)
-- Supabase project: `dvszkmkxamilxocawbml`
-- Test user created via Supabase Admin API
+## API Baseline
+- Unauthorized call to `submit-test` returns `401` (expected).
+- Authorized call with valid user JWT returns `200` (expected).
 
-### Scenarios
-1. Smoke
-- `test.html` opens with no runtime JS error
-- `results.html` opens and respects auth state
+## Iteration A (Bug Found Earlier)
+- Bug: users could see чужие результаты.
+- Fix: query now filters by `.eq('user_id', currentUser.id)`.
+- Status: fixed.
 
-2. Auth
-- Email login success
-- Session survives cross-page navigation (`test.html` -> `results.html`)
+## Iteration B (Current Task)
+- Bug: A1 card could show injected label text (`Inject`) from `level_badge`.
+- Fix: level title rendering now uses trusted level map in UI; `A1 -> Starter`.
+- Status: fixed.
 
-3. Test + submit-test
-- User completes all 50 questions
-- Browser sends POST to `/functions/v1/submit-test`
-- Result badge is populated from server response
-
-4. XSS safety
-- Injected HTML-like payload in DB result must not execute
-- No injected `<img src="x">` from malicious payload in results DOM
-
-5. Regression checks
-- Console errors absent in happy path
-- Results list and stats render correctly
-
-## Execution Report
-
-### Iteration 1 (FAILED)
-- Status: failed
-- Failing checks:
-  - `submit-test returns 200` -> got `401`
-  - `result section visible after finish` -> hidden due submit failure
-  - `no console errors during flow` -> 401 network error
-- Root cause:
-  - Edge gateway rejected JWT before function execution: `{"code":401,"message":"Invalid JWT"}`.
-
-### Fix Applied
-- Redeployed function with gateway JWT check disabled:
-  - `supabase functions deploy submit-test --no-verify-jwt`
-- Kept user validation inside function (`auth.getUser()` with Authorization header).
-- Added repo config for persistence on future deploys:
-  - `supabase/config.toml` with `[functions.submit-test] verify_jwt = false`.
-
-### Iteration 2 (PASSED)
-- Status: passed
-- Passed checks:
-  - `test.html loads without page errors`
-  - `login redirects to test section`
-  - `result badge is populated after finish`
-  - `submit-test returns 200`
-  - `results.html shows results section for authenticated user`
-  - `results list renders cards`
-  - `no injected img nodes from DB payload`
-  - `XSS payload did not execute`
-  - `no console errors during flow`
+## Playwright E2E Result (Final)
+- PASS `test.html loads without page errors`
+- PASS `login redirects to test section`
+- PASS `result badge is populated after finish`
+- PASS `submit-test returns 200`
+- PASS `results.html shows results section for authenticated user`
+- PASS `results list renders cards`
+- PASS `results do not display injected text as level title`
+- PASS `A1 results display Starter label`
+- PASS `no injected img nodes from DB payload`
+- PASS `XSS payload did not execute`
+- PASS `no console errors during flow`
 
 ## Final Verdict
-- All planned checks passed in final iteration.
-- No open functional/security bugs remain in tested scope.
+All checks passed. No open bugs in tested scope.

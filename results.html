@@ -435,6 +435,15 @@
                 C1: 'bg-pink-500',
                 C2: 'bg-purple-500'
             };
+            const levelTitles = {
+                'Below A1': 'Beginner',
+                A1: 'Starter',
+                A2: 'Elementary',
+                B1: 'Intermediate',
+                B2: 'Upper-Intermediate',
+                C1: 'Advanced',
+                C2: 'Proficiency'
+            };
 
             const date = new Date(result.completed_at);
             const formattedDate = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -446,11 +455,7 @@
 
             const isBeginner = ['Beginner', 'Below A1', 'below a1', 'beginner'].includes(String(result.level));
             const level = isBeginner ? 'A0' : String(result.level || 'A1');
-            let levelDesc = isBeginner ? 'Beginner' : level;
-
-            if (!isBeginner && typeof result.level_badge === 'string' && result.level_badge.includes(' - ')) {
-                levelDesc = result.level_badge.split(' - ')[1];
-            }
+            const levelDesc = isBeginner ? 'Beginner' : (levelTitles[level] || level);
 
             const colorClass = isBeginner ? 'bg-gray-500' : (levelColors[result.level] || 'bg-gray-500');
 
