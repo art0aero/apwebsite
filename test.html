@@ -267,236 +267,107 @@
 
     <!-- Supabase Integration -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // Supabase Configuration
-        const SUPABASE_URL = 'https://dvszkmkxamilxocawbml.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IPiv65AiEjXlmbebq-3jOQ_aVR-5_RY';
-        
-        // Initialize Supabase client
-        const { createClient } = supabase;
-        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <script src="shared/auth.js"></script>
 
-        // Global state
-        let currentUser = null;
-
-        // Auth state listener
-        supabaseClient.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' && session?.user) {
-                currentUser = session.user;
-                console.log('User signed in:', currentUser.email);
-            } else if (event === 'SIGNED_OUT') {
-                currentUser = null;
-                console.log('User signed out');
-            }
-        });
-
-        // Check if user is already logged in on page load
-        async function checkAuth() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session?.user) {
-                currentUser = session.user;
-                return true;
-            }
-            return false;
-        }
-    </script>
-
-    <!-- Questions Data -->
     <script>
         const allQuestions = [
-            // PART 1: A1 Level (Questions 1-8)
-            { id: 1, level: "A1", question: "Choose the correct verb form: \"She ______ to school by bus.\"", options: ["go", "goes", "going", "gone"], correct: 1 },
-            { id: 2, level: "A1", question: "Select the correct question word: \"______ is your name?\"", options: ["Who", "What", "Where", "When"], correct: 1 },
-            { id: 3, level: "A1", question: "Choose the opposite of \"big\":", options: ["small", "long", "tall", "short"], correct: 0 },
-            { id: 4, level: "A1", question: "Complete: \"I ______ like coffee because it's too bitter.\"", options: ["don't", "doesn't", "am not", "not"], correct: 0 },
-            { id: 5, level: "A1", question: "Which sentence is correct?", options: ["He is a student.", "He student is.", "Is he a students?", "A student he is."], correct: 0 },
-            { id: 6, level: "A1", question: "Select the correct preposition: \"The bag is ______ the table.\"", options: ["in", "on", "from", "into"], correct: 1 },
-            { id: 7, level: "A1", question: "What is the past tense of \"eat\"?", options: ["eated", "ate", "eaten", "eating"], correct: 1 },
-            { id: 8, level: "A1", question: "Choose the correct word: \"I have two ______.\"", options: ["childs", "children", "child", "childrens"], correct: 1 },
-
-            // PART 2: A2 Level (Questions 9-16)
-            { id: 9, level: "A2", question: "Select the correct comparative: \"This book is ______ than that one.\"", options: ["more good", "gooder", "better", "more better"], correct: 2 },
-            { id: 10, level: "A2", question: "Choose the correct preposition: \"We usually go swimming ______ Saturdays.\"", options: ["in", "on", "at", "by"], correct: 1 },
-            { id: 11, level: "A2", question: "Complete the sentence: \"I ______ to the cinema last night.\"", options: ["go", "gone", "went", "going"], correct: 2 },
-            { id: 12, level: "A2", question: "What do you call a person who travels to work every day?", options: ["A tourist", "A commuter", "A passenger", "A pedestrian"], correct: 1 },
-            { id: 13, level: "A2", question: "Select the correct phrasal verb: \"Please ______ your shoes before entering.\"", options: ["put on", "take off", "get on", "turn on"], correct: 1 },
-            { id: 14, level: "A2", question: "Choose the correct word: \"She speaks English ______.\"", options: ["good", "goodly", "well", "best"], correct: 2 },
-            { id: 15, level: "A2", question: "Complete the collocation: \"______ a decision\"", options: ["do", "make", "take", "have"], correct: 1 },
-            { id: 16, level: "A2", question: "Which question is correct?", options: ["Where you live?", "Where do you live?", "Where does you live?", "Where are you live?"], correct: 1 },
-
-            // PART 3: B1 Level (Questions 17-26)
-            { id: 17, level: "B1", question: "Choose the correct conditional: \"If I ______ enough money, I would buy a car.\"", options: ["have", "had", "would have", "will have"], correct: 1 },
-            { id: 18, level: "B1", question: "Which sentence uses the passive voice correctly?", options: ["The cake was baked by my mother.", "My mother was baked the cake.", "The cake is baking by my mother.", "My mother has baked by the cake."], correct: 0 },
-            { id: 19, level: "B1", question: "Select the correct phrasal verb: \"Could you ______ the music? It's too loud.\"", options: ["turn up", "turn down", "turn on", "turn over"], correct: 1 },
-            { id: 20, level: "B1", question: "Transform to reported speech: \"I will help you tomorrow,\" she said.", options: ["She said she will help me tomorrow.", "She said she would help me the next day.", "She said she helps me tomorrow.", "She said I would help her the next day."], correct: 1 },
-            { id: 21, level: "B1", question: "What does \"to beat around the bush\" mean?", options: ["To garden professionally", "To avoid getting to the point", "To win easily", "To be outdoors"], correct: 1 },
-            { id: 22, level: "B1", question: "Choose the most appropriate response: \"I heard you lost your job. I'm so sorry.\"", options: ["It's none of your business.", "Thank you. I'm trying to stay positive.", "Yes, I was terrible at it anyway.", "Why are you sorry?"], correct: 1 },
-            { id: 23, level: "B1", question: "Transform to passive: \"They are building a new hospital.\"", options: ["A new hospital is being built.", "A new hospital is building.", "A new hospital has been built.", "A new hospital was being built."], correct: 0 },
-            { id: 24, level: "B1", question: "Select the correct punctuation: \"______ , we must consider the costs.\"", options: ["However", "However,", "However;", "However:"], correct: 1 },
-            { id: 25, level: "B1", question: "Complete the sentence: \"Maria _________ English for five years before she moved to London.\"", options: ["would study", "studied", "has been studied", "had been studying"], correct: 3 },
-            { id: 26, level: "B1", question: "Choose the correct relative pronoun: \"The man ______ lives next door is a doctor.\"", options: ["which", "who", "whose", "whom"], correct: 1 },
-
-            // PART 4: B2 Level (Questions 27-36)
-            { id: 27, level: "B2", question: "Select the correct relative pronoun: \"The artist ______ paintings were stolen has been found.\"", options: ["who", "which", "whose", "whom"], correct: 2 },
-            { id: 28, level: "B2", question: "Which sentence respects the rule of inversion?", options: ["Never I have seen such beauty.", "Never have I seen such beauty.", "I have never seen such beauty.", "Have I never seen such beauty."], correct: 1 },
-            { id: 29, level: "B2", question: "Choose the synonym for \"ubiquitous\":", options: ["Rare", "Everywhere", "Hidden", "Ancient"], correct: 1 },
-            { id: 30, level: "B2", question: "Select the correct word: \"The company's ______ has increased by 20% this year.\"", options: ["money", "revenue", "cash", "payment"], correct: 1 },
-            { id: 31, level: "B2", question: "Which word fits best: \"The politician's speech was full of ______ promises.\"", options: ["hollow", "heavy", "hard", "high"], correct: 0 },
-            { id: 32, level: "B2", question: "Choose the correct meaning of \"pragmatic\":", options: ["Idealistic and dreamy", "Practical and realistic", "Emotional and sensitive", "Theoretical and abstract"], correct: 1 },
-            { id: 33, level: "B2", question: "Identify the error: \"Between you and I, this plan won't work.\"", options: ["Between should be Among", "I should be me", "won't should be will not", "No error"], correct: 1 },
-            { id: 34, level: "B2", question: "Which sentence demonstrates formal register for a business letter?", options: ["Hey, just checking in about that thing.", "What's up with the project? Let me know ASAP.", "I am writing to inquire regarding the matter discussed.", "Can't wait to hear from you!"], correct: 2 },
-            { id: 35, level: "B2", question: "Read the passage: \"The proliferation of remote work has altered urban landscapes.\" What does \"proliferation\" mean?", options: ["Reduction", "Rapid increase", "Professional development", "Government regulation"], correct: 1 },
-            { id: 36, level: "B2", question: "What does \"unprecedented\" suggest about vacancy rates?", options: ["They are unimportant", "They are lower than usual", "They are higher than ever before", "They are exactly as expected"], correct: 2 },
-
-            // PART 5: C1 Level (Questions 37-44)
-            { id: 37, level: "C1", question: "Identify the correct subjunctive form: \"It is essential that he ______ present at the meeting.\"", options: ["is", "be", "was", "would be"], correct: 1 },
-            { id: 38, level: "C1", question: "Which sentence demonstrates correct use of cleft sentences for emphasis?", options: ["It was the manager who fired the employee.", "The manager was who fired the employee.", "Who fired the employee was the manager.", "Fired the employee was the manager."], correct: 0 },
-            { id: 39, level: "C1", question: "Select the sentence with correct parallel structure:", options: ["She likes hiking, to swim, and biking.", "She likes hiking, swimming, and biking.", "She likes to hike, swimming, and to bike.", "She likes to hike, to swim, and biking."], correct: 1 },
-            { id: 40, level: "C1", question: "Which word means \"the ability to change without breaking\"?", options: ["Fragility", "Resilience", "Rigidity", "Vulnerability"], correct: 1 },
-            { id: 41, level: "C1", question: "Select the correct term: \"The ______ of his argument was that technology isolates us.\"", options: ["crux", "crust", "crush", "crusty"], correct: 0 },
-            { id: 42, level: "C1", question: "Which word is most appropriate for academic writing? \"The results ______ the hypothesis.\"", options: ["prove", "tell", "show", "substantiate"], correct: 3 },
-            { id: 43, level: "C1", question: "Which sentence is grammatically correct?", options: ["Neither the students nor the teacher were present.", "Neither the students nor the teacher was present.", "Neither the students or the teacher was present.", "Neither the students nor the teacher are present."], correct: 1 },
-            { id: 44, level: "C1", question: "Select the sentence that demonstrates the most appropriate use of modal verbs:", options: ["Sarah must have forgotten about the meeting.", "Sarah should have forgotten about the meeting.", "Sarah could have forgotten about the meeting.", "Sarah might forget about the meeting."], correct: 0 },
-
-            // PART 6: C2 Level (Questions 45-50)
-            { id: 45, level: "C2", question: "Complete the third conditional: \"Had I known about the delay, I ______ earlier.\"", options: ["would leave", "would have left", "had left", "will leave"], correct: 1 },
-            { id: 46, level: "C2", question: "Identify the error (if any): \"The data, which was carefully collected by the researchers over a three-year period, were analyzed extensively.\"", options: ["which was should be which were", "were analyzed should be was analyzed", "carefully collected should be careful collected", "No error"], correct: 3 },
-            { id: 47, level: "C2", question: "What is the meaning of \"ephemeral\"?", options: ["Eternal", "Lasting for a very short time", "Extremely important", "Gradually developing"], correct: 1 },
-            { id: 48, level: "C2", question: "Choose the word that best completes: \"Her ______ manner made everyone feel comfortable immediately.\"", options: ["abrasive", "affable", "ambiguous", "austere"], correct: 1 },
-            { id: 49, level: "C2", question: "What does \"zeitgeist\" refer to?", options: ["A specific historical event", "The general mood or spirit of a particular period", "A type of philosophy", "An economic theory"], correct: 1 },
-            { id: 50, level: "C2", question: "Choose the most logical completion: \"______ , the experiment yielded unexpected results.\"", options: ["Contrary to popular belief", "As expected", "Following the standard procedure", "Without any doubt"], correct: 0 }
+            { id: 1, level: "A1", question: "Choose the correct verb form: \"She ______ to school by bus.\"", options: ["go", "goes", "going", "gone"] },
+            { id: 2, level: "A1", question: "Select the correct question word: \"______ is your name?\"", options: ["Who", "What", "Where", "When"] },
+            { id: 3, level: "A1", question: "Choose the opposite of \"big\":", options: ["small", "long", "tall", "short"] },
+            { id: 4, level: "A1", question: "Complete: \"I ______ like coffee because it's too bitter.\"", options: ["don't", "doesn't", "am not", "not"] },
+            { id: 5, level: "A1", question: "Which sentence is correct?", options: ["He is a student.", "He student is.", "Is he a students?", "A student he is."] },
+            { id: 6, level: "A1", question: "Select the correct preposition: \"The bag is ______ the table.\"", options: ["in", "on", "from", "into"] },
+            { id: 7, level: "A1", question: "What is the past tense of \"eat\"?", options: ["eated", "ate", "eaten", "eating"] },
+            { id: 8, level: "A1", question: "Choose the correct word: \"I have two ______.\"", options: ["childs", "children", "child", "childrens"] },
+            { id: 9, level: "A2", question: "Select the correct comparative: \"This book is ______ than that one.\"", options: ["more good", "gooder", "better", "more better"] },
+            { id: 10, level: "A2", question: "Choose the correct preposition: \"We usually go swimming ______ Saturdays.\"", options: ["in", "on", "at", "by"] },
+            { id: 11, level: "A2", question: "Complete the sentence: \"I ______ to the cinema last night.\"", options: ["go", "gone", "went", "going"] },
+            { id: 12, level: "A2", question: "What do you call a person who travels to work every day?", options: ["A tourist", "A commuter", "A passenger", "A pedestrian"] },
+            { id: 13, level: "A2", question: "Select the correct phrasal verb: \"Please ______ your shoes before entering.\"", options: ["put on", "take off", "get on", "turn on"] },
+            { id: 14, level: "A2", question: "Choose the correct word: \"She speaks English ______.\"", options: ["good", "goodly", "well", "best"] },
+            { id: 15, level: "A2", question: "Complete the collocation: \"______ a decision\"", options: ["do", "make", "take", "have"] },
+            { id: 16, level: "A2", question: "Which question is correct?", options: ["Where you live?", "Where do you live?", "Where does you live?", "Where are you live?"] },
+            { id: 17, level: "B1", question: "Choose the correct conditional: \"If I ______ enough money, I would buy a car.\"", options: ["have", "had", "would have", "will have"] },
+            { id: 18, level: "B1", question: "Which sentence uses the passive voice correctly?", options: ["The cake was baked by my mother.", "My mother was baked the cake.", "The cake is baking by my mother.", "My mother has baked by the cake."] },
+            { id: 19, level: "B1", question: "Select the correct phrasal verb: \"Could you ______ the music? It's too loud.\"", options: ["turn up", "turn down", "turn on", "turn over"] },
+            { id: 20, level: "B1", question: "Transform to reported speech: \"I will help you tomorrow,\" she said.", options: ["She said she will help me tomorrow.", "She said she would help me the next day.", "She said she helps me tomorrow.", "She said I would help her the next day."] },
+            { id: 21, level: "B1", question: "What does \"to beat around the bush\" mean?", options: ["To garden professionally", "To avoid getting to the point", "To win easily", "To be outdoors"] },
+            { id: 22, level: "B1", question: "Choose the most appropriate response: \"I heard you lost your job. I'm so sorry.\"", options: ["It's none of your business.", "Thank you. I'm trying to stay positive.", "Yes, I was terrible at it anyway.", "Why are you sorry?"] },
+            { id: 23, level: "B1", question: "Transform to passive: \"They are building a new hospital.\"", options: ["A new hospital is being built.", "A new hospital is building.", "A new hospital has been built.", "A new hospital was being built."] },
+            { id: 24, level: "B1", question: "Select the correct punctuation: \"______ , we must consider the costs.\"", options: ["However", "However,", "However;", "However:"] },
+            { id: 25, level: "B1", question: "Complete the sentence: \"Maria _________ English for five years before she moved to London.\"", options: ["would study", "studied", "has been studied", "had been studying"] },
+            { id: 26, level: "B1", question: "Choose the correct relative pronoun: \"The man ______ lives next door is a doctor.\"", options: ["which", "who", "whose", "whom"] },
+            { id: 27, level: "B2", question: "Select the correct relative pronoun: \"The artist ______ paintings were stolen has been found.\"", options: ["who", "which", "whose", "whom"] },
+            { id: 28, level: "B2", question: "Which sentence respects the rule of inversion?", options: ["Never I have seen such beauty.", "Never have I seen such beauty.", "I have never seen such beauty.", "Have I never seen such beauty."] },
+            { id: 29, level: "B2", question: "Choose the synonym for \"ubiquitous\":", options: ["Rare", "Everywhere", "Hidden", "Ancient"] },
+            { id: 30, level: "B2", question: "Select the correct word: \"The company's ______ has increased by 20% this year.\"", options: ["money", "revenue", "cash", "payment"] },
+            { id: 31, level: "B2", question: "Which word fits best: \"The politician's speech was full of ______ promises.\"", options: ["hollow", "heavy", "hard", "high"] },
+            { id: 32, level: "B2", question: "Choose the correct meaning of \"pragmatic\":", options: ["Idealistic and dreamy", "Practical and realistic", "Emotional and sensitive", "Theoretical and abstract"] },
+            { id: 33, level: "B2", question: "Identify the error: \"Between you and I, this plan won't work.\"", options: ["Between should be Among", "I should be me", "won't should be will not", "No error"] },
+            { id: 34, level: "B2", question: "Which sentence demonstrates formal register for a business letter?", options: ["Hey, just checking in about that thing.", "What's up with the project? Let me know ASAP.", "I am writing to inquire regarding the matter discussed.", "Can't wait to hear from you!"] },
+            { id: 35, level: "B2", question: "Read the passage: \"The proliferation of remote work has altered urban landscapes.\" What does \"proliferation\" mean?", options: ["Reduction", "Rapid increase", "Professional development", "Government regulation"] },
+            { id: 36, level: "B2", question: "What does \"unprecedented\" suggest about vacancy rates?", options: ["They are unimportant", "They are lower than usual", "They are higher than ever before", "They are exactly as expected"] },
+            { id: 37, level: "C1", question: "Identify the correct subjunctive form: \"It is essential that he ______ present at the meeting.\"", options: ["is", "be", "was", "would be"] },
+            { id: 38, level: "C1", question: "Which sentence demonstrates correct use of cleft sentences for emphasis?", options: ["It was the manager who fired the employee.", "The manager was who fired the employee.", "Who fired the employee was the manager.", "Fired the employee was the manager."] },
+            { id: 39, level: "C1", question: "Select the sentence with correct parallel structure:", options: ["She likes hiking, to swim, and biking.", "She likes hiking, swimming, and biking.", "She likes to hike, swimming, and to bike.", "She likes to hike, to swim, and biking."] },
+            { id: 40, level: "C1", question: "Which word means \"the ability to change without breaking\"?", options: ["Fragility", "Resilience", "Rigidity", "Vulnerability"] },
+            { id: 41, level: "C1", question: "Select the correct term: \"The ______ of his argument was that technology isolates us.\"", options: ["crux", "crust", "crush", "crusty"] },
+            { id: 42, level: "C1", question: "Which word is most appropriate for academic writing? \"The results ______ the hypothesis.\"", options: ["prove", "tell", "show", "substantiate"] },
+            { id: 43, level: "C1", question: "Which sentence is grammatically correct?", options: ["Neither the students nor the teacher were present.", "Neither the students nor the teacher was present.", "Neither the students or the teacher was present.", "Neither the students nor the teacher are present."] },
+            { id: 44, level: "C1", question: "Select the sentence that demonstrates the most appropriate use of modal verbs:", options: ["Sarah must have forgotten about the meeting.", "Sarah should have forgotten about the meeting.", "Sarah could have forgotten about the meeting.", "Sarah might forget about the meeting."] },
+            { id: 45, level: "C2", question: "Complete the third conditional: \"Had I known about the delay, I ______ earlier.\"", options: ["would leave", "would have left", "had left", "will leave"] },
+            { id: 46, level: "C2", question: "Identify the error (if any): \"The data, which was carefully collected by the researchers over a three-year period, were analyzed extensively.\"", options: ["which was should be which were", "were analyzed should be was analyzed", "carefully collected should be careful collected", "No error"] },
+            { id: 47, level: "C2", question: "What is the meaning of \"ephemeral\"?", options: ["Eternal", "Lasting for a very short time", "Extremely important", "Gradually developing"] },
+            { id: 48, level: "C2", question: "Choose the word that best completes: \"Her ______ manner made everyone feel comfortable immediately.\"", options: ["abrasive", "affable", "ambiguous", "austere"] },
+            { id: 49, level: "C2", question: "What does \"zeitgeist\" refer to?", options: ["A specific historical event", "The general mood or spirit of a particular period", "A type of philosophy", "An economic theory"] },
+            { id: 50, level: "C2", question: "Choose the most logical completion: \"______ , the experiment yielded unexpected results.\"", options: ["Contrary to popular belief", "As expected", "Following the standard procedure", "Without any doubt"] }
         ];
 
-        // Level order for calculations
-        const LEVEL_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
-        const LEVEL_WEIGHTS = [1, 2, 4, 8, 16, 32]; // Exponential weights
-        const LEVEL_BOUNDARIES = [0.08, 0.20, 0.35, 0.50, 0.70, 0.90];
-    </script>
-
-    <!-- JavaScript Logic & Integrations -->
-    <script>
-        const sampleQuestions = [
-            {
-                id: 1,
-                level: "A1",
-                question: "Choose the correct verb form: \"She ______ to school by bus.\"",
-                options: ["go", "goes", "going", "gone"],
-                correct: 1
-            },
-            {
-                id: 9,
-                level: "A2",
-                question: "Select the correct comparative: \"This book is ______ than that one.\"",
-                options: ["more good", "gooder", "better", "more better"],
-                correct: 2
-            },
-            {
-                id: 27,
-                level: "B2",
-                question: "Select the correct relative pronoun: \"The artist ______ paintings were stolen has been found.\"",
-                options: ["who", "which", "whose", "whom"],
-                correct: 2
-            },
-            {
-                id: 42,
-                level: "C1",
-                question: "Which phrase best completes the sentence? \"The committee decided to ______ the new policy immediately.\"",
-                options: ["put up with", "bring about", "implement", "get over"],
-                correct: 2
-            }
-        ];
-        
-        let testQuestions = [...allQuestions]; // Default to all 50 questions
+        let authController = null;
+        let currentUser = null;
+        let testQuestions = [...allQuestions];
         let currentQuestionIndex = 0;
         let userAnswers = new Array(testQuestions.length).fill(null);
         let timerInterval;
         let secondsElapsed = 0;
 
-        // Check auth on page load
-        window.addEventListener('DOMContentLoaded', async () => {
-            // Handle OAuth redirect - check for hash in URL
-            if (window.location.hash) {
-                const hashParams = new URLSearchParams(window.location.hash.substring(1));
-                const accessToken = hashParams.get('access_token');
-                
-                if (accessToken) {
-                    console.log('OAuth redirect detected, processing...');
-                    // Set session from URL hash
-                    const { data: { session }, error } = await supabaseClient.auth.getSession();
-                    if (error) {
-                        console.error('OAuth session error:', error);
-                    } else if (session) {
-                        currentUser = session.user;
-                        document.getElementById('results-link').classList.remove('hidden');
-                        // Clean up URL
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    }
-                }
-            }
-            
-            const isLoggedIn = await checkAuth();
-            if (isLoggedIn) {
-                console.log('User already logged in:', currentUser.email);
-                document.getElementById('results-link').classList.remove('hidden');
-                // Check for saved progress
-                const savedProgress = loadTestProgress();
-                if (savedProgress && savedProgress.userEmail === currentUser.email) {
-                    // Restore progress
-                    currentQuestionIndex = savedProgress.currentQuestionIndex;
-                    userAnswers = savedProgress.userAnswers;
-                    secondsElapsed = savedProgress.secondsElapsed || 0;
-                    console.log('Restored progress: question', currentQuestionIndex + 1, 'of', testQuestions.length);
-                    showSection('test-section');
-                    initTest(false); // Don't reset, use restored state
-                } else {
-                    // No saved progress, start fresh
-                    showSection('test-section');
-                    initTest(true);
-                }
-            }
-        });
-
-        // Save test progress to localStorage
         function saveTestProgress() {
-            if (currentUser) {
+            try {
                 const progress = {
-                    userEmail: currentUser.email,
-                    currentQuestionIndex: currentQuestionIndex,
-                    userAnswers: userAnswers,
-                    secondsElapsed: secondsElapsed,
-                    savedAt: new Date().toISOString()
+                    currentQuestionIndex,
+                    userAnswers,
+                    secondsElapsed,
+                    timestamp: Date.now()
                 };
                 localStorage.setItem('testProgress', JSON.stringify(progress));
-                console.log('Progress saved');
+            } catch (error) {
+                console.error('Error saving progress:', error);
             }
         }
 
-        // Load test progress from localStorage
         function loadTestProgress() {
             try {
                 const saved = localStorage.getItem('testProgress');
-                return saved ? JSON.parse(saved) : null;
-            } catch (e) {
-                console.error('Error loading progress:', e);
+                if (!saved) return null;
+                return JSON.parse(saved);
+            } catch (error) {
+                console.error('Error loading progress:', error);
                 return null;
             }
         }
 
-        // Clear test progress from localStorage
         function clearTestProgress() {
             localStorage.removeItem('testProgress');
-            console.log('Progress cleared');
         }
 
         function showSection(id) {
-            ['auth-section', 'test-section', 'results-section'].forEach(sec => {
+            ['auth-section', 'test-section', 'results-section'].forEach((sec) => {
                 document.getElementById(sec).classList.add('hidden');
             });
             const target = document.getElementById(id);
             target.classList.remove('hidden');
-            
             target.classList.remove('fade-in');
-            void target.offsetWidth; 
+            void target.offsetWidth;
             target.classList.add('fade-in');
         }
 
@@ -507,7 +378,6 @@
             const formReg = document.getElementById('form-register');
             const errorDiv = document.getElementById('auth-error');
 
-            // Clear error messages
             errorDiv.classList.add('hidden');
             errorDiv.textContent = '';
 
@@ -516,14 +386,12 @@
                 regBtn.className = "flex-1 py-2 text-xs uppercase tracking-widest font-semibold text-neutral-400 hover:text-white rounded-md transition-all";
                 formLogin.classList.remove('hidden');
                 formReg.classList.add('hidden');
-                // Clear register form
                 document.getElementById('form-register').reset();
             } else {
                 regBtn.className = "flex-1 py-2 text-xs uppercase tracking-widest font-semibold bg-white/10 text-white rounded-md transition-all border border-white/5";
                 loginBtn.className = "flex-1 py-2 text-xs uppercase tracking-widest font-semibold text-neutral-400 hover:text-white rounded-md transition-all";
                 formReg.classList.remove('hidden');
                 formLogin.classList.add('hidden');
-                // Clear login form
                 document.getElementById('form-login').reset();
             }
         }
@@ -533,7 +401,7 @@
             const str1 = document.getElementById('str-1');
             const str2 = document.getElementById('str-2');
             const str3 = document.getElementById('str-3');
-            
+
             let strength = 0;
             if (pw.length >= 8) strength++;
             if (pw.match(/[A-Z]/) && pw.match(/[0-9]/)) strength++;
@@ -552,74 +420,40 @@
             const errorDiv = document.getElementById('auth-error');
 
             try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-                if (error) throw error;
-
-                currentUser = data.user;
-                console.log('Logged in:', currentUser.email);
+                currentUser = await authController.login(email, password);
                 document.getElementById('results-link').classList.remove('hidden');
                 showSection('test-section');
                 initTest();
             } catch (error) {
-                errorDiv.textContent = error.message === 'Invalid login credentials'
-                    ? 'Неверный email или пароль'
-                    : error.message;
+                errorDiv.textContent = error.message;
                 errorDiv.classList.remove('hidden');
             }
         }
 
         async function handleRegister(e) {
             e.preventDefault();
+            const email = document.querySelector('#form-register input[type="email"]').value;
             const pw = document.getElementById('reg-password').value;
             const confirm = document.getElementById('reg-confirm').value;
-            const email = document.querySelector('#form-register input[type="email"]').value;
             const errorDiv = document.getElementById('auth-error');
 
-            // Validation
-            if (pw.length < 8) {
-                errorDiv.textContent = 'Пароль должен быть не менее 8 символов';
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-            if (pw !== confirm) {
-                errorDiv.textContent = 'Пароли не совпадают';
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
             try {
-                const { data, error } = await supabaseClient.auth.signUp({
-                    email: email,
-                    password: pw,
-                    options: {
-                        emailRedirectTo: 'https://www.lcdk.ru/test.html'
-                    }
-                });
+                const result = await authController.register(email, pw, confirm);
 
-                if (error) throw error;
-
-                // Проверяем, требует ли Supabase подтверждения email
-                if (data.user && !data.session) {
+                if (result.needsEmailConfirmation) {
                     errorDiv.textContent = 'Подтвердите email для входа. Проверьте почту.';
                     errorDiv.classList.remove('hidden');
                     return;
                 }
 
-                currentUser = data.user;
-                console.log('Registered:', currentUser.email);
-
-                // Check if email confirmation is required
-                if (data.user?.identities?.length === 0) {
+                if (result.alreadyExists) {
                     errorDiv.textContent = 'Такой аккаунт уже существует. Пожалуйста, войдите.';
                     errorDiv.classList.remove('hidden');
                     switchAuthTab('login');
                     return;
                 }
 
+                currentUser = result.user;
                 document.getElementById('results-link').classList.remove('hidden');
                 showSection('test-section');
                 initTest();
@@ -630,32 +464,25 @@
         }
 
         async function signInWithProvider(provider) {
+            const errorDiv = document.getElementById('auth-error');
             try {
-                const { error } = await supabaseClient.auth.signInWithOAuth({
-                    provider: provider,
-                    options: {
-                        redirectTo: 'https://www.lcdk.ru/test.html'
-                    }
-                });
-                if (error) throw error;
+                await authController.oauth(provider);
             } catch (error) {
-                const errorDiv = document.getElementById('auth-error');
                 errorDiv.textContent = error.message;
                 errorDiv.classList.remove('hidden');
             }
         }
 
         async function signOut() {
-            await supabaseClient.auth.signOut();
+            await authController.signOut();
             currentUser = null;
             showSection('auth-section');
         }
 
         function initTest(reset = true) {
-            // Use all 50 questions
             testQuestions = [...allQuestions];
             document.getElementById('q-total').textContent = testQuestions.length;
-            
+
             if (reset) {
                 currentQuestionIndex = 0;
                 userAnswers = new Array(testQuestions.length).fill(null);
@@ -676,18 +503,15 @@
 
         function renderQuestion() {
             const q = testQuestions[currentQuestionIndex];
-            
             document.getElementById('q-current').textContent = currentQuestionIndex + 1;
             document.getElementById('q-level').textContent = q.level;
-            
-            const progress = ((currentQuestionIndex) / testQuestions.length) * 100;
+            const progress = (currentQuestionIndex / testQuestions.length) * 100;
             document.getElementById('progress-bar').style.width = `${progress}%`;
-
             document.getElementById('question-text').textContent = q.question;
 
             const container = document.getElementById('options-container');
             container.innerHTML = '';
-            
+
             q.options.forEach((opt, idx) => {
                 const isChecked = userAnswers[currentQuestionIndex] === idx ? 'checked' : '';
                 const html = `
@@ -708,7 +532,6 @@
         function selectAnswer(idx) {
             userAnswers[currentQuestionIndex] = idx;
             checkNextButton();
-            // Auto-save progress after each answer
             saveTestProgress();
         }
 
@@ -716,7 +539,7 @@
             const btn = document.getElementById('btn-next');
             if (userAnswers[currentQuestionIndex] !== null) {
                 btn.disabled = false;
-                btn.innerHTML = currentQuestionIndex === testQuestions.length - 1 
+                btn.innerHTML = currentQuestionIndex === testQuestions.length - 1
                     ? `Завершить <iconify-icon icon="solar:flag-linear" width="18" stroke-width="1.5"></iconify-icon>`
                     : `Далее <iconify-icon icon="solar:arrow-right-linear" width="18" stroke-width="1.5"></iconify-icon>`;
             } else {
@@ -740,175 +563,116 @@
             }
         }
 
-        function calculateLevel(answers) {
-            // Count correct answers per level
-            const levelScores = { A1: { correct: 0, total: 0 }, A2: { correct: 0, total: 0 }, B1: { correct: 0, total: 0 }, B2: { correct: 0, total: 0 }, C1: { correct: 0, total: 0 }, C2: { correct: 0, total: 0 } };
-
-            answers.forEach((ans, idx) => {
-                const q = testQuestions[idx];
-                if (levelScores[q.level]) {
-                    levelScores[q.level].total++;
-                    if (ans === q.correct) {
-                        levelScores[q.level].correct++;
-                    }
-                }
-            });
-
-            // Calculate percentages for each level
-            const percentages = LEVEL_ORDER.map(lvl => {
-                const score = levelScores[lvl];
-                return score.total > 0 ? (score.correct / score.total) * 100 : 0;
-            });
-
-            /*
-            CEFR Calculation Algorithm (Exponential Weights with Cumulative Minimum):
-            - Weights: A1=1, A2=2, B1=4, B2=8, C1=16, C2=32
-            - Formula: score = Σ[min(%current, %all_below) × weight] / Σweights
-            - Boundaries: 0.08=A1, 0.20=A2, 0.35=B1, 0.50=B2, 0.70=C1, 0.90=C2, 1.00=C2
-            */
-
-            // Calculate cumulative minimum (foundation must be solid)
-            const effectiveScores = [];
-            let currentMin = 100;
-            for (const p of percentages) {
-                currentMin = Math.min(currentMin, p);
-                effectiveScores.push(currentMin);
+        async function submitTestToServer() {
+            const accessToken = await authController.getAccessToken();
+            if (!accessToken) {
+                throw new Error('Сессия истекла. Войдите снова.');
             }
 
-            // Weighted sum
-            const weights = LEVEL_WEIGHTS;
-            const weightedSum = effectiveScores.reduce((sum, score, i) => sum + score * weights[i], 0);
-            const maxPossible = weights.reduce((sum, w) => sum + 100 * w, 0);
-            const normalized = weightedSum / maxPossible;
-
-            // Determine level based on boundaries
-            const boundaries = LEVEL_BOUNDARIES;
-            const levels = ["A1", "A2", "B1", "B2", "C1", "C2"];
-            let finalLevel = "C2";
-            
-            for (let i = 0; i < boundaries.length; i++) {
-                if (normalized < boundaries[i]) {
-                    finalLevel = i === 0 ? "Below A1" : levels[i - 1];
-                    break;
+            const payload = {
+                answers: testQuestions.map((q, idx) => ({
+                    question_id: q.id,
+                    selected_option: userAnswers[idx]
+                })),
+                time_seconds: secondsElapsed,
+                client_meta: {
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    user_agent: navigator.userAgent
                 }
+            };
+
+            const response = await fetch(`${window.AppAuth.SUPABASE_URL}/functions/v1/submit-test`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    apikey: window.AppAuth.SUPABASE_ANON_KEY,
+                    Authorization: `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Не удалось отправить результаты теста');
             }
-
-            // Calculate overall percentage for display
-            const totalCorrect = answers.filter((ans, idx) => ans === testQuestions[idx].correct).length;
-            const overallPercentage = Math.round((totalCorrect / testQuestions.length) * 100);
-
-            // Level descriptions
-            const levelDescriptions = {
-                "Below A1": "Beginner",
-                "A1": "Elementary",
-                "A2": "Pre-Intermediate",
-                "B1": "Intermediate",
-                "B2": "Upper-Intermediate",
-                "C1": "Advanced",
-                "C2": "Proficiency"
-            };
-
-            return {
-                percentage: overallPercentage,
-                normalizedScore: normalized,
-                badge: `${finalLevel} - ${levelDescriptions[finalLevel] || ""}`,
-                level: finalLevel,
-                breakdown: LEVEL_ORDER.reduce((acc, lvl) => {
-                    acc[lvl] = Math.round(percentages[LEVEL_ORDER.indexOf(lvl)]);
-                    return acc;
-                }, {})
-            };
+            return result;
         }
 
         async function finishTest() {
             clearInterval(timerInterval);
-            const results = calculateLevel(userAnswers);
 
-            document.getElementById('res-level-badge').textContent = results.badge;
+            try {
+                const result = await submitTestToServer();
+                document.getElementById('res-level-badge').textContent = result.level_badge;
 
-            const circle = document.getElementById('res-circle');
-            const offset = 282.7 - (282.7 * results.percentage) / 100;
+                const circle = document.getElementById('res-circle');
+                const offset = 282.7 - (282.7 * result.score) / 100;
 
-            // Save results to Supabase first
-            if (currentUser) {
-                try {
-                    const { error } = await supabaseClient.from('test_results').insert({
-                        user_id: currentUser.id,
-                        user_email: currentUser.email,
-                        answers: userAnswers,
-                        score: results.percentage,
-                        normalized_score: results.normalizedScore,
-                        level: results.level,
-                        level_badge: results.badge,
-                        breakdown: results.breakdown,
-                        time_seconds: secondsElapsed,
-                        completed_at: new Date().toISOString()
-                    });
+                clearTestProgress();
+                showSection('results-section');
 
-                    if (error) {
-                        console.error('Error saving results:', error);
-                    } else {
-                        console.log('Results saved successfully');
-                    }
-                } catch (error) {
-                    console.error('Error saving results:', error);
-                }
-            }
+                setTimeout(() => {
+                    circle.style.strokeDashoffset = offset;
+                    animateValue('res-score-text', 0, result.score, 1000);
+                }, 100);
 
-            // Clear progress only after results are saved
-            clearTestProgress();
+                const bdContainer = document.getElementById('res-breakdown');
+                bdContainer.innerHTML = '';
 
-            showSection('results-section');
+                Object.entries(result.breakdown || {}).forEach(([level, value]) => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center gap-4';
 
-            setTimeout(() => {
-                circle.style.strokeDashoffset = offset;
-                animateValue("res-score-text", 0, results.percentage, 1000);
-            }, 100);
+                    const levelLabel = document.createElement('span');
+                    levelLabel.className = 'w-8 text-sm font-semibold text-white/50 tracking-widest';
+                    levelLabel.textContent = level;
 
-            const bdContainer = document.getElementById('res-breakdown');
-            bdContainer.innerHTML = '';
+                    const progressWrap = document.createElement('div');
+                    progressWrap.className = 'flex-1 h-2 bg-white/5 rounded-full overflow-hidden';
 
-            Object.entries(results.breakdown).forEach(([lvl, val]) => {
-                const html = `
-                    <div class="flex items-center gap-4">
-                        <span class="w-8 text-sm font-semibold text-white/50 tracking-widest">${lvl}</span>
-                        <div class="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
-                            <div class="h-full bg-gradient-to-r from-[#215fc3] via-[#fea0da] to-[#f19737] rounded-full transition-all duration-1000" style="width: 0%" data-target="${val}%"></div>
-                        </div>
-                        <span class="w-12 text-right text-sm font-light text-white">${val}%</span>
-                    </div>
-                `;
-                bdContainer.insertAdjacentHTML('beforeend', html);
-            });
+                    const progressFill = document.createElement('div');
+                    progressFill.className = 'h-full bg-gradient-to-r from-[#215fc3] via-[#fea0da] to-[#f19737] rounded-full transition-all duration-1000';
+                    progressFill.style.width = '0%';
+                    progressFill.setAttribute('data-target', `${value}%`);
 
-            setTimeout(() => {
-                bdContainer.querySelectorAll('[data-target]').forEach(bar => {
-                    bar.style.width = bar.getAttribute('data-target');
+                    const valueLabel = document.createElement('span');
+                    valueLabel.className = 'w-12 text-right text-sm font-light text-white';
+                    valueLabel.textContent = `${value}%`;
+
+                    progressWrap.appendChild(progressFill);
+                    row.appendChild(levelLabel);
+                    row.appendChild(progressWrap);
+                    row.appendChild(valueLabel);
+                    bdContainer.appendChild(row);
                 });
-            }, 300);
+
+                setTimeout(() => {
+                    bdContainer.querySelectorAll('[data-target]').forEach((bar) => {
+                        bar.style.width = bar.getAttribute('data-target');
+                    });
+                }, 300);
+            } catch (error) {
+                const errorDiv = document.getElementById('auth-error');
+                errorDiv.textContent = error.message || 'Не удалось завершить тест';
+                errorDiv.classList.remove('hidden');
+                showSection('auth-section');
+            }
         }
 
         function goToHome() {
-            // Just navigate to home without clearing progress
             showSection('auth-section');
         }
 
         function resetTest() {
-            // Reset all state
             currentQuestionIndex = 0;
             userAnswers = new Array(allQuestions.length).fill(null);
             secondsElapsed = 0;
             clearInterval(timerInterval);
 
-            // Clear saved progress
             clearTestProgress();
-
-            // Clear auth forms for security
             document.getElementById('form-login').reset();
             document.getElementById('form-register').reset();
             document.getElementById('auth-error').classList.add('hidden');
-
-            // Reset UI
             document.getElementById('res-circle').style.strokeDashoffset = 282.7;
             document.getElementById('res-score-text').textContent = '0%';
             document.getElementById('timer').textContent = '00:00';
@@ -918,21 +682,55 @@
 
         function animateValue(id, start, end, duration) {
             if (start === end) return;
-            var range = end - start;
-            var current = start;
-            var increment = end > start? 1 : -1;
-            var stepTime = Math.abs(Math.floor(duration / range));
-            var obj = document.getElementById(id);
-            var timer = setInterval(function() {
+            const range = end - start;
+            let current = start;
+            const increment = end > start ? 1 : -1;
+            const stepTime = Math.abs(Math.floor(duration / Math.abs(range || 1)));
+            const obj = document.getElementById(id);
+            const timer = setInterval(() => {
                 current += increment;
-                obj.innerHTML = current + "%";
-                if (current == end) {
+                obj.textContent = `${current}%`;
+                if (current === end) {
                     clearInterval(timer);
                 }
             }, stepTime);
         }
 
-        window.addEventListener('beforeunload', function (e) {
+        window.addEventListener('DOMContentLoaded', async () => {
+            authController = window.AppAuth.createAuthController({
+                redirectPath: '/test.html',
+                emailRedirectPath: '/test.html',
+                onSignedIn: (user) => {
+                    currentUser = user;
+                    document.getElementById('results-link').classList.remove('hidden');
+                },
+                onSignedOut: () => {
+                    currentUser = null;
+                    document.getElementById('results-link').classList.add('hidden');
+                }
+            });
+
+            try {
+                const user = await authController.init();
+                if (user) {
+                    const savedProgress = loadTestProgress();
+                    showSection('test-section');
+
+                    if (savedProgress && savedProgress.currentQuestionIndex !== undefined) {
+                        currentQuestionIndex = savedProgress.currentQuestionIndex;
+                        userAnswers = savedProgress.userAnswers || new Array(testQuestions.length).fill(null);
+                        secondsElapsed = savedProgress.secondsElapsed || 0;
+                        initTest(false);
+                    } else {
+                        initTest();
+                    }
+                }
+            } catch (error) {
+                console.error('Auth init error:', error);
+            }
+        });
+
+        window.addEventListener('beforeunload', (e) => {
             if (!document.getElementById('test-section').classList.contains('hidden')) {
                 e.preventDefault();
                 e.returnValue = '';

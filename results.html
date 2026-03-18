@@ -224,65 +224,21 @@
 
     <!-- Supabase Integration -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="shared/auth.js"></script>
+
     <script>
-        // Supabase Configuration
-        const SUPABASE_URL = 'https://dvszkmkxamilxocawbml.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_IPiv65AiEjXlmbebq-3jOQ_aVR-5_RY';
-
-        const { createClient } = supabase;
-        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+        let authController = null;
         let currentUser = null;
 
-        // Auth state listener
-        supabaseClient.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' && session?.user) {
-                currentUser = session.user;
-                console.log('User signed in:', currentUser.email);
-                document.getElementById('logout-btn').classList.remove('hidden');
-                loadResults();
-            } else if (event === 'SIGNED_OUT') {
-                currentUser = null;
-                document.getElementById('logout-btn').classList.add('hidden');
-            }
-        });
-
-        async function checkAuth() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session?.user) {
-                currentUser = session.user;
-                return true;
-            }
-            return false;
+        function makeEl(tag, className, text) {
+            const el = document.createElement(tag);
+            if (className) el.className = className;
+            if (text !== undefined && text !== null) el.textContent = String(text);
+            return el;
         }
 
-        // Check auth on page load
-        window.addEventListener('DOMContentLoaded', async () => {
-            if (window.location.hash) {
-                const hashParams = new URLSearchParams(window.location.hash.substring(1));
-                const accessToken = hashParams.get('access_token');
-                if (accessToken) {
-                    console.log('OAuth redirect detected');
-                    const { data: { session } } = await supabaseClient.auth.getSession();
-                    if (session) {
-                        currentUser = session.user;
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    }
-                }
-            }
-
-            const isLoggedIn = await checkAuth();
-            if (isLoggedIn) {
-                document.getElementById('logout-btn').classList.remove('hidden');
-                document.getElementById('take-test-btn').classList.remove('hidden');
-                document.getElementById('user-email').textContent = currentUser.email;
-                showSection('results-section');
-                loadResults();
-            }
-        });
-
         function showSection(id) {
-            ['auth-section', 'results-section'].forEach(sec => {
+            ['auth-section', 'results-section'].forEach((sec) => {
                 document.getElementById(sec).classList.add('hidden');
             });
             const target = document.getElementById(id);
@@ -341,69 +297,42 @@
             const errorDiv = document.getElementById('auth-error');
 
             try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-                if (error) throw error;
-                currentUser = data.user;
+                currentUser = await authController.login(email, password);
                 document.getElementById('user-email').textContent = currentUser.email;
                 document.getElementById('logout-btn').classList.remove('hidden');
                 document.getElementById('take-test-btn').classList.remove('hidden');
                 showSection('results-section');
                 loadResults();
             } catch (error) {
-                errorDiv.textContent = error.message === 'Invalid login credentials'
-                    ? 'Неверный email или пароль'
-                    : error.message;
+                errorDiv.textContent = error.message;
                 errorDiv.classList.remove('hidden');
             }
         }
 
         async function handleRegister(e) {
             e.preventDefault();
+            const email = document.querySelector('#form-register input[type="email"]').value;
             const pw = document.getElementById('reg-password').value;
             const confirm = document.getElementById('reg-confirm').value;
-            const email = document.querySelector('#form-register input[type="email"]').value;
             const errorDiv = document.getElementById('auth-error');
 
-            if (pw.length < 8) {
-                errorDiv.textContent = 'Пароль должен быть не менее 8 символов';
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-            if (pw !== confirm) {
-                errorDiv.textContent = 'Пароли не совпадают';
-                errorDiv.classList.remove('hidden');
-                return;
-            }
-
             try {
-                const { data, error } = await supabaseClient.auth.signUp({
-                    email: email,
-                    password: pw,
-                    options: {
-                        emailRedirectTo: 'https://www.lcdk.ru/results.html'
-                    }
-                });
-                if (error) throw error;
+                const result = await authController.register(email, pw, confirm);
 
-                // Проверяем, требует ли Supabase подтверждения email
-                if (data.user && !data.session) {
+                if (result.needsEmailConfirmation) {
                     errorDiv.textContent = 'Подтвердите email для входа. Проверьте почту.';
                     errorDiv.classList.remove('hidden');
                     return;
                 }
 
-                currentUser = data.user;
-
-                if (data.user?.identities?.length === 0) {
+                if (result.alreadyExists) {
                     errorDiv.textContent = 'Такой аккаунт уже существует. Пожалуйста, войдите.';
                     errorDiv.classList.remove('hidden');
                     switchAuthTab('login');
                     return;
                 }
 
+                currentUser = result.user;
                 document.getElementById('user-email').textContent = currentUser.email;
                 document.getElementById('logout-btn').classList.remove('hidden');
                 document.getElementById('take-test-btn').classList.remove('hidden');
@@ -416,189 +345,187 @@
         }
 
         async function signInWithProvider(provider) {
+            const errorDiv = document.getElementById('auth-error');
             try {
-                const { error } = await supabaseClient.auth.signInWithOAuth({
-                    provider: provider,
-                    options: {
-                        redirectTo: 'https://www.lcdk.ru/results.html'
-                    }
-                });
-                if (error) throw error;
+                await authController.oauth(provider);
             } catch (error) {
-                const errorDiv = document.getElementById('auth-error');
                 errorDiv.textContent = error.message;
                 errorDiv.classList.remove('hidden');
             }
         }
 
         async function signOut() {
-            await supabaseClient.auth.signOut();
+            await authController.signOut();
             currentUser = null;
+            document.getElementById('logout-btn').classList.add('hidden');
+            document.getElementById('take-test-btn').classList.add('hidden');
             showSection('auth-section');
         }
 
         async function loadResults() {
-            if (!currentUser) return;
+            const loading = document.getElementById('loading');
+            const container = document.getElementById('results-list');
+            const emptyState = document.getElementById('empty-state');
+            const stats = document.getElementById('stats-container');
 
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('results-list').innerHTML = '';
-            document.getElementById('empty-state').classList.add('hidden');
-            document.getElementById('stats-container').classList.add('hidden');
+            loading.classList.remove('hidden');
+            container.textContent = '';
+            emptyState.classList.add('hidden');
+            stats.classList.add('hidden');
 
             try {
+                const supabaseClient = authController.getClient();
                 const { data, error } = await supabaseClient
                     .from('test_results')
                     .select('*')
-                    .eq('user_id', currentUser.id)
                     .order('completed_at', { ascending: false });
+
+                loading.classList.add('hidden');
 
                 if (error) throw error;
 
-                document.getElementById('loading').classList.add('hidden');
-
                 if (!data || data.length === 0) {
-                    document.getElementById('empty-state').classList.remove('hidden');
+                    emptyState.classList.remove('hidden');
                     return;
                 }
 
-                document.getElementById('stats-container').classList.remove('hidden');
+                stats.classList.remove('hidden');
                 updateStats(data);
                 renderResults(data);
             } catch (error) {
                 console.error('Error loading results:', error);
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('empty-state').classList.remove('hidden');
+                loading.classList.add('hidden');
+                emptyState.classList.remove('hidden');
             }
         }
 
         function updateStats(results) {
             const total = results.length;
-            const avgScore = Math.round(results.reduce((sum, r) => sum + (r.score || 0), 0) / total);
-            
+            const avgScore = Math.round(results.reduce((sum, r) => sum + (Number(r.score) || 0), 0) / total);
+
             const levelOrder = ['Below A1', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
             const bestLevel = results.reduce((best, r) => {
-                const currentIdx = levelOrder.indexOf(r.level);
+                const currentIdx = levelOrder.indexOf(String(r.level));
                 const bestIdx = levelOrder.indexOf(best);
-                return currentIdx > bestIdx ? r.level : best;
+                return currentIdx > bestIdx ? String(r.level) : best;
             }, 'Below A1');
 
-            const avgTime = Math.round(results.reduce((sum, r) => sum + (r.time_seconds || 0), 0) / total / 60);
+            const avgTime = Math.round(results.reduce((sum, r) => sum + (Number(r.time_seconds) || 0), 0) / total / 60);
 
-            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-total').textContent = String(total);
             document.getElementById('stat-best').textContent = bestLevel;
-            document.getElementById('stat-avg').textContent = avgScore + '%';
-            document.getElementById('stat-time').textContent = avgTime + ' мин';
+            document.getElementById('stat-avg').textContent = `${avgScore}%`;
+            document.getElementById('stat-time').textContent = `${avgTime} мин`;
+        }
+
+        function buildResultCard(result, index) {
+            const levelColors = {
+                'Below A1': 'bg-gray-500',
+                A1: 'bg-green-500',
+                A2: 'bg-lime-500',
+                B1: 'bg-yellow-500',
+                B2: 'bg-orange-500',
+                C1: 'bg-pink-500',
+                C2: 'bg-purple-500'
+            };
+
+            const date = new Date(result.completed_at);
+            const formattedDate = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+            const formattedTime = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+            const minutes = Math.floor((Number(result.time_seconds) || 0) / 60);
+            const seconds = (Number(result.time_seconds) || 0) % 60;
+            const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            const isBeginner = ['Beginner', 'Below A1', 'below a1', 'beginner'].includes(String(result.level));
+            const level = isBeginner ? 'A0' : String(result.level || 'A1');
+            let levelDesc = isBeginner ? 'Beginner' : level;
+
+            if (!isBeginner && typeof result.level_badge === 'string' && result.level_badge.includes(' - ')) {
+                levelDesc = result.level_badge.split(' - ')[1];
+            }
+
+            const colorClass = isBeginner ? 'bg-gray-500' : (levelColors[result.level] || 'bg-gray-500');
+
+            const card = makeEl('div', 'bg-neutral-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl hover:scale-[1.02] transition-transform cursor-default');
+            const row = makeEl('div', 'flex items-center justify-between flex-wrap gap-4');
+
+            const left = makeEl('div', 'flex items-center gap-4');
+            const badge = makeEl('div', `w-14 h-14 rounded-full ${colorClass} flex items-center justify-center text-white font-bold text-base shadow-lg shrink-0`, level);
+            badge.style.minWidth = '56px';
+
+            const textWrap = makeEl('div');
+            const title = makeEl('div', 'text-white font-semibold text-lg', levelDesc);
+            const sub = makeEl('div', 'text-neutral-400 text-xs uppercase tracking-wider', `${formattedDate} • ${formattedTime}`);
+            textWrap.appendChild(title);
+            textWrap.appendChild(sub);
+
+            left.appendChild(badge);
+            left.appendChild(textWrap);
+
+            const right = makeEl('div', 'flex items-center gap-6');
+
+            const scoreBox = makeEl('div', 'text-center');
+            scoreBox.appendChild(makeEl('div', 'text-2xl font-light text-white', `${Number(result.score) || 0}%`));
+            scoreBox.appendChild(makeEl('div', 'text-[10px] uppercase tracking-widest text-neutral-500', 'Точность'));
+
+            const timeBox = makeEl('div', 'text-center');
+            timeBox.appendChild(makeEl('div', 'text-2xl font-light text-white', timeStr));
+            timeBox.appendChild(makeEl('div', 'text-[10px] uppercase tracking-widest text-neutral-500', 'Время'));
+
+            const divider = makeEl('div', 'w-px h-10 bg-white/10');
+
+            const attemptBox = makeEl('div', 'text-center');
+            attemptBox.appendChild(makeEl('div', 'text-2xl font-light text-[#f19737]', `#${index + 1}`));
+            attemptBox.appendChild(makeEl('div', 'text-[10px] uppercase tracking-widest text-neutral-500', 'Попытка'));
+
+            right.appendChild(scoreBox);
+            right.appendChild(timeBox);
+            right.appendChild(divider);
+            right.appendChild(attemptBox);
+
+            row.appendChild(left);
+            row.appendChild(right);
+            card.appendChild(row);
+
+            return card;
         }
 
         function renderResults(results) {
             const container = document.getElementById('results-list');
-            container.innerHTML = '';
-
-            const levelColors = {
-                'Below A1': 'bg-gray-500',
-                'A1': 'bg-green-500',
-                'A2': 'bg-lime-500',
-                'B1': 'bg-yellow-500',
-                'B2': 'bg-orange-500',
-                'C1': 'bg-pink-500',
-                'C2': 'bg-purple-500'
-            };
-
+            container.textContent = '';
             results.forEach((result, index) => {
-                const date = new Date(result.completed_at);
-                const formattedDate = date.toLocaleDateString('ru-RU', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                });
-                const formattedTime = date.toLocaleTimeString('ru-RU', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-
-                const minutes = Math.floor((result.time_seconds || 0) / 60);
-                const seconds = (result.time_seconds || 0) % 60;
-                const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-                // Check if this is a Beginner level result
-                if (result.level === 'Beginner' || result.level === 'Below A1' || result.level === 'below a1' || result.level === 'beginner') {
-                    // Beginner (Below A1) - hardcoded exactly like Elementary but with A0 and Beginner
-                    const html = `
-                        <div class="bg-neutral-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl hover:scale-[1.02] transition-transform cursor-default">
-                            <div class="flex items-center justify-between flex-wrap gap-4">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-14 h-14 rounded-full bg-gray-500 flex items-center justify-center text-white font-bold text-base shadow-lg shrink-0" style="min-width: 56px;">
-                                        A0
-                                    </div>
-                                    <div>
-                                        <div class="text-white font-semibold text-lg">Beginner</div>
-                                        <div class="text-neutral-400 text-xs uppercase tracking-wider">${formattedDate} • ${formattedTime}</div>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-6">
-                                    <div class="text-center">
-                                        <div class="text-2xl font-light text-white">${result.score}%</div>
-                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Точность</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-2xl font-light text-white">${timeStr}</div>
-                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Время</div>
-                                    </div>
-                                    <div class="w-px h-10 bg-white/10"></div>
-                                    <div class="text-center">
-                                        <div class="text-2xl font-light text-[#f19737]">#${index + 1}</div>
-                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Попытка</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    container.insertAdjacentHTML('beforeend', html);
-                } else {
-                    // All other levels (A1, A2, B1, B2, C1, C2)
-                    let level = result.level || 'A1';
-                    let levelDesc = level;
-                    
-                    if (result.level_badge && result.level_badge.includes(' - ')) {
-                        levelDesc = result.level_badge.split(' - ')[1];
-                    }
-                    
-                    const colorClass = levelColors[level] || 'bg-gray-500';
-
-                    const html = `
-                        <div class="bg-neutral-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-xl hover:scale-[1.02] transition-transform cursor-default">
-                            <div class="flex items-center justify-between flex-wrap gap-4">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-14 h-14 rounded-full ${colorClass} flex items-center justify-center text-white font-bold text-base shadow-lg shrink-0" style="min-width: 56px;">
-                                        ${level}
-                                    </div>
-                                    <div>
-                                        <div class="text-white font-semibold text-lg">${levelDesc}</div>
-                                        <div class="text-neutral-400 text-xs uppercase tracking-wider">${formattedDate} • ${formattedTime}</div>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-6">
-                                    <div class="text-center">
-                                        <div class="text-2xl font-light text-white">${result.score}%</div>
-                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Точность</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-2xl font-light text-white">${timeStr}</div>
-                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Время</div>
-                                    </div>
-                                    <div class="w-px h-10 bg-white/10"></div>
-                                    <div class="text-center">
-                                        <div class="text-2xl font-light text-[#f19737]">#${index + 1}</div>
-                                        <div class="text-[10px] uppercase tracking-widest text-neutral-500">Попытка</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    container.insertAdjacentHTML('beforeend', html);
-                }
+                container.appendChild(buildResultCard(result, index));
             });
         }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            authController = window.AppAuth.createAuthController({
+                redirectPath: '/results.html',
+                emailRedirectPath: '/results.html',
+                onSignedIn: (user) => {
+                    currentUser = user;
+                    document.getElementById('logout-btn').classList.remove('hidden');
+                    document.getElementById('take-test-btn').classList.remove('hidden');
+                    document.getElementById('user-email').textContent = user.email || '';
+                },
+                onSignedOut: () => {
+                    currentUser = null;
+                    document.getElementById('logout-btn').classList.add('hidden');
+                    document.getElementById('take-test-btn').classList.add('hidden');
+                }
+            });
+
+            try {
+                const user = await authController.init();
+                if (user) {
+                    showSection('results-section');
+                    loadResults();
+                }
+            } catch (error) {
+                console.error('Auth init error:', error);
+            }
+        });
     </script>
 </body>
 </html>
