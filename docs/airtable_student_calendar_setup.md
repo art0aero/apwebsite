@@ -11,11 +11,13 @@ Use one base with normalized tables:
 2. `Student Calendar`
 - One row per lesson event (not one sheet per student).
 - Core fields (minimum):
-  - `supabase_lesson_id` (single line text, unique key from Supabase)
+  - `sync_key` (single line text, technical key from Supabase for idempotent sync)
+  - `student_name_status` (display field for methodist view, e.g. `Иван Иванов • planned`)
   - `email`
   - `lesson_date`
   - `status` (`planned|completed|missed|rescheduled`)
 - Recommended extra fields:
+  - `student` (link to `Students`)
   - `student_name`, `phone`
   - `lesson_title`, `lesson_description`
   - `level`, `cost`, `priority_note`
@@ -56,7 +58,7 @@ Inside Airtable Interface:
 
 2. Push (Supabase -> Airtable, optional)
 - Controlled by `AIRTABLE_ENABLE_PUSH=true`.
-- Upserts lessons from Supabase into `Student Calendar` by `supabase_lesson_id`.
+- Upserts lessons from Supabase into `Student Calendar` by `sync_key`.
 - Optional upsert of student profile data into `Students` table.
 
 ## Required env vars
@@ -76,7 +78,10 @@ Inside Airtable Interface:
 - `AIRTABLE_EMAIL_FIELD` (default `email`)
 - `AIRTABLE_STATUS_FIELD` (default `status`)
 - `AIRTABLE_DATE_FIELD` (default `lesson_date`)
-- `AIRTABLE_LESSON_ID_FIELD` (default `supabase_lesson_id`)
+- `AIRTABLE_LESSON_ID_FIELD` (default `sync_key`)
+- `AIRTABLE_LEGACY_LESSON_ID_FIELD` (default `supabase_lesson_id`)
+- `AIRTABLE_STUDENT_LINK_FIELD` (default `student`)
+- `AIRTABLE_DISPLAY_FIELD` (default `student_name_status`)
 - `AIRTABLE_TITLE_FIELD` (default `lesson_title`)
 - `AIRTABLE_DESCRIPTION_FIELD` (default `lesson_description`)
 - `AIRTABLE_LEVEL_FIELD` (default `level`)
@@ -84,7 +89,11 @@ Inside Airtable Interface:
 - `AIRTABLE_PRIORITY_FIELD` (default `priority_note`)
 - `AIRTABLE_FULL_NAME_FIELD` (default `student_name`)
 - `AIRTABLE_PHONE_FIELD` (default `phone`)
+- `AIRTABLE_CURRENT_LEVEL_FIELD` (default `current_level`)
+- `AIRTABLE_TARGET_LEVEL_FIELD` (default `target_level`)
+- `AIRTABLE_ACTIVE_FIELD` (default `is_active`)
 - `AIRTABLE_LAST_MODIFIED_FIELD` (default `last_modified_at`)
+- `AIRTABLE_PULL_MAX_RECORDS` (default `1200`, protects edge function from worker limit)
 - `SYNC_CRON_SECRET` (for secure cron execution)
 
 ## Operational notes

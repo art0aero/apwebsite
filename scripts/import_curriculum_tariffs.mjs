@@ -19,7 +19,7 @@ const LEVEL_TARIFFS = [
   { level: 'B1', price_per_lesson: 1500, currency: 'RUB' },
   { level: 'B2', price_per_lesson: 1500, currency: 'RUB' },
   { level: 'C1', price_per_lesson: 1500, currency: 'RUB' },
-  { level: 'C2', price_per_lesson: 1500, currency: 'RUB' },
+  { level: 'C2', price_per_lesson: 1650, currency: 'RUB' },
 ];
 
 const FILE_MAPPING = [

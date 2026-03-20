@@ -151,9 +151,12 @@ async function main() {
     },
   ]);
 
-  const calendar = await ensureTable('Student Calendar', 'supabase_lesson_id');
+  const calendar = await ensureTable('Student Calendar', 'student_name_status');
 
   await ensureFields('Student Calendar', [
+    { name: 'sync_key', type: 'singleLineText' },
+    { name: 'student_name_status', type: 'singleLineText' },
+    { name: 'supabase_lesson_id', type: 'singleLineText' },
     {
       name: 'student',
       type: 'multipleRecordLinks',

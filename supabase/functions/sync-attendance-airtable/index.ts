@@ -19,15 +19,22 @@ type AirtableConfig = {
   statusField: string;
   dateField: string;
   lessonIdField: string;
+  legacyLessonIdField: string | null;
+  studentLinkField: string;
   titleField: string;
   descriptionField: string;
   levelField: string;
   costField: string;
   priorityField: string;
+  displayField: string;
   fullNameField: string;
   phoneField: string;
+  currentLevelField: string;
+  targetLevelField: string;
+  activeField: string;
   modifiedField: string;
   pushGuardMinutes: number;
+  pullMaxRecords: number;
 };
 
 type LessonRow = {
@@ -54,6 +61,13 @@ type ProfileRow = {
   phone_e164: string | null;
 };
 
+type GoalMetaRow = {
+  user_id: string;
+  current_level: string | null;
+  target_level: string | null;
+  is_active: boolean;
+};
+
 function getConfig(): AirtableConfig {
   const calendarTableName = Deno.env.get('AIRTABLE_CALENDAR_TABLE_NAME') || Deno.env.get('AIRTABLE_TABLE_NAME');
   if (!calendarTableName) throw new Error('Missing env: AIRTABLE_CALENDAR_TABLE_NAME or AIRTABLE_TABLE_NAME');
@@ -68,16 +82,23 @@ function getConfig(): AirtableConfig {
     emailField: Deno.env.get('AIRTABLE_EMAIL_FIELD') || 'email',
     statusField: Deno.env.get('AIRTABLE_STATUS_FIELD') || 'status',
     dateField: Deno.env.get('AIRTABLE_DATE_FIELD') || 'lesson_date',
-    lessonIdField: Deno.env.get('AIRTABLE_LESSON_ID_FIELD') || 'supabase_lesson_id',
+    lessonIdField: Deno.env.get('AIRTABLE_LESSON_ID_FIELD') || 'sync_key',
+    legacyLessonIdField: Deno.env.get('AIRTABLE_LEGACY_LESSON_ID_FIELD') || 'supabase_lesson_id',
+    studentLinkField: Deno.env.get('AIRTABLE_STUDENT_LINK_FIELD') || 'student',
     titleField: Deno.env.get('AIRTABLE_TITLE_FIELD') || 'lesson_title',
     descriptionField: Deno.env.get('AIRTABLE_DESCRIPTION_FIELD') || 'lesson_description',
     levelField: Deno.env.get('AIRTABLE_LEVEL_FIELD') || 'level',
     costField: Deno.env.get('AIRTABLE_COST_FIELD') || 'cost',
     priorityField: Deno.env.get('AIRTABLE_PRIORITY_FIELD') || 'priority_note',
+    displayField: Deno.env.get('AIRTABLE_DISPLAY_FIELD') || 'student_name_status',
     fullNameField: Deno.env.get('AIRTABLE_FULL_NAME_FIELD') || 'student_name',
     phoneField: Deno.env.get('AIRTABLE_PHONE_FIELD') || 'phone',
+    currentLevelField: Deno.env.get('AIRTABLE_CURRENT_LEVEL_FIELD') || 'current_level',
+    targetLevelField: Deno.env.get('AIRTABLE_TARGET_LEVEL_FIELD') || 'target_level',
+    activeField: Deno.env.get('AIRTABLE_ACTIVE_FIELD') || 'is_active',
     modifiedField: Deno.env.get('AIRTABLE_LAST_MODIFIED_FIELD') || 'last_modified_at',
     pushGuardMinutes: Math.max(0, Number(Deno.env.get('AIRTABLE_PUSH_GUARD_MINUTES') || 10)),
+    pullMaxRecords: Math.max(0, Number(Deno.env.get('AIRTABLE_PULL_MAX_RECORDS') || 1200)),
   };
 }
 
@@ -209,6 +230,14 @@ function isRecentlyModified(rawValue: unknown, minutes: number): boolean {
   return diffMs >= 0 && diffMs <= minutes * 60_000;
 }
 
+function recordModifiedAtMs(config: AirtableConfig, record: AirtableRecord): number {
+  const raw = trimOrNull(record.fields?.[config.modifiedField]) || trimOrNull(record.createdTime);
+  if (!raw) return 0;
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return 0;
+  return date.getTime();
+}
+
 async function recalcPlanMeta(adminClient: SupabaseClient, planVersionId: string) {
   const { data: lessons, error: lessonsError } = await adminClient
     .from('study_lessons')
@@ -256,12 +285,125 @@ async function loadProfilesByUserIds(adminClient: SupabaseClient, userIds: strin
   return map;
 }
 
-function lessonToAirtableFields(config: AirtableConfig, lesson: LessonRow, profile: ProfileRow | undefined): Record<string, unknown> {
-  return {
+async function loadGoalMetaByUserIds(adminClient: SupabaseClient, userIds: string[]): Promise<Map<string, GoalMetaRow>> {
+  const map = new Map<string, GoalMetaRow>();
+  for (const idsChunk of chunk([...new Set(userIds)], 200)) {
+    if (!idsChunk.length) continue;
+
+    const { data, error } = await adminClient
+      .from('study_goals')
+      .select('user_id,current_level,target_level,is_active,updated_at')
+      .in('user_id', idsChunk)
+      .eq('is_active', true)
+      .order('updated_at', { ascending: false });
+
+    if (error) throw new Error(error.message);
+
+    for (const row of data || []) {
+      const userId = String(row.user_id);
+      if (map.has(userId)) continue;
+      map.set(userId, {
+        user_id: userId,
+        current_level: row.current_level ? String(row.current_level) : null,
+        target_level: row.target_level ? String(row.target_level) : null,
+        is_active: Boolean(row.is_active),
+      });
+    }
+  }
+  return map;
+}
+
+async function syncStudentsTable(
+  adminClient: SupabaseClient,
+  config: AirtableConfig,
+  profileMap: Map<string, ProfileRow>,
+  goalMap: Map<string, GoalMetaRow>,
+): Promise<{ studentRecordIdByEmail: Map<string, string>; studentsSynced: number }> {
+  if (!config.studentsTableName) {
+    return { studentRecordIdByEmail: new Map(), studentsSynced: 0 };
+  }
+
+  const profileRows = [...profileMap.values()].filter((row) => normalizeEmail(row.email));
+  const studentRecords = await airtableListRecords(config, config.studentsTableName);
+
+  const byEmail = new Map<string, string>();
+  for (const record of studentRecords) {
+    const email = normalizeEmail(record.fields?.[config.emailField]);
+    if (email) byEmail.set(email, record.id);
+  }
+
+  const studentCreates: Array<{ fields: Record<string, unknown> }> = [];
+  const studentUpdates: Array<{ id: string; fields: Record<string, unknown> }> = [];
+
+  for (const row of profileRows) {
+    const email = normalizeEmail(row.email);
+    if (!email) continue;
+
+    const goal = goalMap.get(String(row.user_id));
+    const currentLevel = trimOrNull(goal?.current_level) || '';
+    const targetLevel = trimOrNull(goal?.target_level) || '';
+    const isActive = Boolean(goal?.is_active);
+
+    const fields: Record<string, unknown> = {
+      [config.emailField]: email,
+      [config.fullNameField]: row.full_name || '',
+      [config.phoneField]: row.phone_e164 || '',
+      [config.currentLevelField]: currentLevel,
+      [config.targetLevelField]: targetLevel,
+      [config.activeField]: isActive,
+    };
+    const recId = byEmail.get(email);
+    if (recId) studentUpdates.push({ id: recId, fields });
+    else studentCreates.push({ fields });
+  }
+
+  for (const batch of chunk(studentCreates, 10)) {
+    await airtableCreateBatch(config, config.studentsTableName, batch);
+  }
+  for (const batch of chunk(studentUpdates, 10)) {
+    await airtableUpdateBatch(config, config.studentsTableName, batch);
+  }
+
+  const refreshedRecords = await airtableListRecords(config, config.studentsTableName);
+  const refreshedByEmail = new Map<string, string>();
+  for (const record of refreshedRecords) {
+    const email = normalizeEmail(record.fields?.[config.emailField]);
+    if (email) refreshedByEmail.set(email, record.id);
+  }
+
+  return { studentRecordIdByEmail: refreshedByEmail, studentsSynced: profileRows.length };
+}
+
+function resolveLessonIdFromAirtableFields(config: AirtableConfig, fields: Record<string, unknown>): string | null {
+  const direct = trimOrNull(fields[config.lessonIdField]);
+  if (direct) return direct;
+  if (!config.legacyLessonIdField || config.legacyLessonIdField === config.lessonIdField) return null;
+  return trimOrNull(fields[config.legacyLessonIdField]);
+}
+
+function resolveLessonStatusDisplay(status: unknown): string {
+  return String(status || 'planned').trim() || 'planned';
+}
+
+function studentDisplayName(profile: ProfileRow | undefined): string {
+  return trimOrNull(profile?.full_name) || trimOrNull(profile?.email) || 'Ученик';
+}
+
+function normalizeCalendarFields(
+  config: AirtableConfig,
+  lesson: LessonRow,
+  profile: ProfileRow | undefined,
+  studentRecordId: string | null,
+): Record<string, unknown> {
+  const display = `${studentDisplayName(profile)} • ${resolveLessonStatusDisplay(lesson.status)}`;
+
+  const fields: Record<string, unknown> = {
     [config.lessonIdField]: lesson.id,
+    [config.displayField]: display,
     [config.emailField]: profile?.email || '',
     [config.fullNameField]: profile?.full_name || '',
     [config.phoneField]: profile?.phone_e164 || '',
+    [config.studentLinkField]: studentRecordId ? [studentRecordId] : [],
     [config.dateField]: lesson.lesson_date,
     [config.statusField]: lesson.status,
     [config.titleField]: lesson.title,
@@ -270,6 +412,12 @@ function lessonToAirtableFields(config: AirtableConfig, lesson: LessonRow, profi
     [config.costField]: Number(lesson.cost || 0),
     [config.priorityField]: lesson.priority_note || '',
   };
+
+  if (config.legacyLessonIdField && config.legacyLessonIdField !== config.lessonIdField) {
+    fields[config.legacyLessonIdField] = display;
+  }
+
+  return fields;
 }
 
 async function pushSupabaseCalendarToAirtable(adminClient: SupabaseClient, config: AirtableConfig) {
@@ -293,11 +441,20 @@ async function pushSupabaseCalendarToAirtable(adminClient: SupabaseClient, confi
   if (!lessonRows.length) return { created: 0, updated: 0, students_synced: 0 };
 
   const profileMap = await loadProfilesByUserIds(adminClient, lessonRows.map((item) => item.user_id));
+  const goalMap = await loadGoalMetaByUserIds(adminClient, lessonRows.map((item) => item.user_id));
+
+  let studentRecordIdByEmail = new Map<string, string>();
+  let studentsSynced = 0;
+  if (config.studentsTableName) {
+    const synced = await syncStudentsTable(adminClient, config, profileMap, goalMap);
+    studentRecordIdByEmail = synced.studentRecordIdByEmail;
+    studentsSynced = synced.studentsSynced;
+  }
 
   const airtableRows = await airtableListRecords(config, config.calendarTableName);
   const airtableByLessonId = new Map<string, { id: string; modifiedAt: string | null }>();
   for (const record of airtableRows) {
-    const lessonId = trimOrNull(record.fields?.[config.lessonIdField]);
+    const lessonId = resolveLessonIdFromAirtableFields(config, record.fields || {});
     if (lessonId) {
       airtableByLessonId.set(lessonId, {
         id: record.id,
@@ -311,7 +468,9 @@ async function pushSupabaseCalendarToAirtable(adminClient: SupabaseClient, confi
   let skippedByGuard = 0;
 
   for (const lesson of lessonRows) {
-    const fields = lessonToAirtableFields(config, lesson, profileMap.get(lesson.user_id));
+    const profile = profileMap.get(lesson.user_id);
+    const studentRecordId = studentRecordIdByEmail.get(normalizeEmail(profile?.email)) || null;
+    const fields = normalizeCalendarFields(config, lesson, profile, studentRecordId);
     const existing = airtableByLessonId.get(lesson.id);
     if (existing?.id) {
       if (isRecentlyModified(existing.modifiedAt, config.pushGuardMinutes)) {
@@ -331,48 +490,7 @@ async function pushSupabaseCalendarToAirtable(adminClient: SupabaseClient, confi
     await airtableUpdateBatch(config, config.calendarTableName, batch);
   }
 
-  if (config.studentsTableName) {
-    const profileRows = [...profileMap.values()].filter((row) => normalizeEmail(row.email));
-    const studentRecords = await airtableListRecords(config, config.studentsTableName);
-
-    const byEmail = new Map<string, string>();
-    for (const record of studentRecords) {
-      const email = normalizeEmail(record.fields?.[config.emailField]);
-      if (email) byEmail.set(email, record.id);
-    }
-
-    const studentCreates: Array<{ fields: Record<string, unknown> }> = [];
-    const studentUpdates: Array<{ id: string; fields: Record<string, unknown> }> = [];
-
-    for (const row of profileRows) {
-      const email = normalizeEmail(row.email);
-      if (!email) continue;
-      const fields = {
-        [config.emailField]: email,
-        [config.fullNameField]: row.full_name || '',
-        [config.phoneField]: row.phone_e164 || '',
-      };
-      const recId = byEmail.get(email);
-      if (recId) studentUpdates.push({ id: recId, fields });
-      else studentCreates.push({ fields });
-    }
-
-    for (const batch of chunk(studentCreates, 10)) {
-      await airtableCreateBatch(config, config.studentsTableName, batch);
-    }
-    for (const batch of chunk(studentUpdates, 10)) {
-      await airtableUpdateBatch(config, config.studentsTableName, batch);
-    }
-
-    return {
-      created: toCreate.length,
-      updated: toUpdate.length,
-      students_synced: profileRows.length,
-      guard_skipped: skippedByGuard,
-    };
-  }
-
-  return { created: toCreate.length, updated: toUpdate.length, students_synced: 0, guard_skipped: skippedByGuard };
+  return { created: toCreate.length, updated: toUpdate.length, students_synced: studentsSynced, guard_skipped: skippedByGuard };
 }
 
 async function resolveProfileByEmail(
@@ -454,7 +572,7 @@ async function pullAirtableUpdatesToSupabase(adminClient: SupabaseClient, config
     const email = normalizeEmail(fields[config.emailField]);
     const statusRaw = fields[config.statusField];
     const lessonDate = normalizeDate(fields[config.dateField]);
-    const lessonId = trimOrNull(fields[config.lessonIdField]);
+    const lessonId = resolveLessonIdFromAirtableFields(config, fields);
     const modifiedToken = trimOrNull(fields[config.modifiedField]) || trimOrNull(record.createdTime) || String(statusRaw || '');
 
     const dedupeKey = createDedupeKey([record.id, modifiedToken, lessonDate || 'no_date']);
@@ -591,6 +709,16 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 
   try {
+    let payload: { mode?: 'both' | 'pull_only' | 'push_only' } = {};
+    try {
+      payload = await req.json();
+    } catch {
+      payload = {};
+    }
+
+    const requestedMode = String(payload?.mode || 'both').toLowerCase();
+    const mode = (requestedMode === 'pull_only' || requestedMode === 'push_only') ? requestedMode : 'both';
+
     const config = getConfig();
 
     const supabaseUrl = ensureEnv('SUPABASE_URL');
@@ -607,16 +735,26 @@ Deno.serve(async (req) => {
     }
 
     const airtableRecords = await airtableListRecords(config, config.calendarTableName);
-    const pullStats = await pullAirtableUpdatesToSupabase(adminClient, config, airtableRecords);
+
+    let pullStats = { processed: 0, skipped: 0, affected_lessons: 0, touched_plan_versions: 0 };
+    if (mode !== 'push_only') {
+      const sortedByModified = [...airtableRecords].sort((a, b) => recordModifiedAtMs(config, b) - recordModifiedAtMs(config, a));
+      const pullRecords = config.pullMaxRecords > 0 ? sortedByModified.slice(0, config.pullMaxRecords) : sortedByModified;
+      pullStats = await pullAirtableUpdatesToSupabase(adminClient, config, pullRecords);
+    }
 
     let pushStats = { created: 0, updated: 0, students_synced: 0, guard_skipped: 0 };
-    if (config.enablePush) {
+    if (config.enablePush && mode !== 'pull_only') {
       pushStats = await pushSupabaseCalendarToAirtable(adminClient, config);
     }
 
     return jsonResponse({
       ok: true,
+      mode,
       records_total: airtableRecords.length,
+      pull_records_processed: mode === 'push_only'
+        ? 0
+        : (config.pullMaxRecords > 0 ? Math.min(airtableRecords.length, config.pullMaxRecords) : airtableRecords.length),
       push: {
         enabled: config.enablePush,
         ...pushStats,

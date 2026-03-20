@@ -78,6 +78,20 @@
 - XSS probe injection rerun: pass.
 - Playwright rerun: pass.
 
+9. Airtable/data-model fixes rerun (pass)
+- Fixed `sync-attendance-airtable` push mapping:
+  - `Students` now receives `current_level`, `target_level`, `is_active`.
+  - `Student Calendar.student` link is populated via `Students` record id.
+  - Added readable display `student_name_status` and legacy display in `supabase_lesson_id`.
+  - Switched technical upsert key to `sync_key` (`AIRTABLE_LESSON_ID_FIELD=sync_key`).
+- Added worker-limit protection:
+  - `mode` support (`both|pull_only|push_only`).
+  - `AIRTABLE_PULL_MAX_RECORDS` cap with modified-date sorting.
+- Endpoint smoke rerun with Airtable integrity checks:
+  - PASS: `airtable-integrity` (`current_level`, `target_level`, link field, readable display).
+- Tariff import rerun:
+  - PASS: `study_tariffs.C2 = 1650.00`.
+
 ## Final Verdict
 - Status: PASS
 - Critical checks: PASS

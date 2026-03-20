@@ -4,6 +4,10 @@ import path from 'node:path';
 const projectRef = process.env.SUPABASE_PROJECT_REF;
 const serviceKey = process.env.SUPABASE_SECRET;
 const anonKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_IPiv65AiEjXlmbebq-3jOQ_aVR-5_RY';
+const airtableApiKey = process.env.AIRTABLE_API_KEY || '';
+const airtableBaseId = process.env.AIRTABLE_BASE_ID || '';
+const airtableStudentsTable = process.env.AIRTABLE_STUDENTS_TABLE_NAME || 'Students';
+const airtableCalendarTable = process.env.AIRTABLE_CALENDAR_TABLE_NAME || 'Student Calendar';
 
 if (!projectRef || !serviceKey || !anonKey) {
   console.error('Missing env vars. Need SUPABASE_PROJECT_REF, SUPABASE_SECRET, SUPABASE_ANON_KEY');
@@ -101,6 +105,45 @@ async function upsertUserRole({ userId, email, role, allowlisted }) {
 
   if (!res.ok) throw new Error(`upsertUserRole failed (${res.status}): ${JSON.stringify(res.body)}`);
   return res.body;
+}
+
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+async function airtableListRecords(tableName) {
+  if (!airtableApiKey || !airtableBaseId) return [];
+  const records = [];
+  let offset = null;
+
+  do {
+    const url = new URL(`https://api.airtable.com/v0/${airtableBaseId}/${encodeURIComponent(tableName)}`);
+    url.searchParams.set('pageSize', '100');
+    if (offset) url.searchParams.set('offset', offset);
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${airtableApiKey}`,
+      },
+    });
+
+    const text = await response.text();
+    let body = null;
+    try {
+      body = text ? JSON.parse(text) : null;
+    } catch {
+      body = text;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Airtable list ${tableName} failed (${response.status}): ${JSON.stringify(body)}`);
+    }
+
+    records.push(...(Array.isArray(body?.records) ? body.records : []));
+    offset = body?.offset || null;
+  } while (offset);
+
+  return records;
 }
 
 async function run() {
@@ -273,14 +316,49 @@ async function run() {
   logCheck('admin-update-lessons');
 
   console.log('Smoke: sync-attendance-airtable...');
-  const syncResult = await callEdge('sync-attendance-airtable', methodistToken, {}, 'POST');
+  const syncResult = await callEdge('sync-attendance-airtable', methodistToken, { mode: 'push_only' }, 'POST');
   assert(syncResult.ok === true, 'sync-attendance-airtable: expected ok=true');
   logCheck('sync-attendance-airtable', {
-    pulled: syncResult.pulled,
-    push_created: syncResult.push_created,
-    push_updated: syncResult.push_updated,
-    guard_skipped: syncResult.guard_skipped,
+    pull: syncResult.pull || {},
+    push: syncResult.push || {},
   });
+
+  if (airtableApiKey && airtableBaseId) {
+    console.log('Smoke: Airtable field integrity...');
+    const studentsRecords = await airtableListRecords(airtableStudentsTable);
+    const calendarRecords = await airtableListRecords(airtableCalendarTable);
+
+    const studentRecord = studentsRecords.find((row) => normalizeEmail(row?.fields?.email) === normalizeEmail(studentEmail));
+    assert(studentRecord, 'Airtable Students: test student row not found');
+
+    const currentLevel = String(studentRecord.fields?.current_level || '').trim();
+    const targetLevel = String(studentRecord.fields?.target_level || '').trim();
+    const isActive = Boolean(studentRecord.fields?.is_active);
+    assert(currentLevel.length > 0, 'Airtable Students: current_level is empty');
+    assert(targetLevel.length > 0, 'Airtable Students: target_level is empty');
+    assert(isActive === true, 'Airtable Students: is_active must be true for active goal');
+
+    const studentCalendarRows = calendarRecords.filter((row) => normalizeEmail(row?.fields?.email) === normalizeEmail(studentEmail));
+    assert(studentCalendarRows.length > 0, 'Airtable Student Calendar: no rows for test student');
+
+    const linkedRow = studentCalendarRows.find((row) => Array.isArray(row?.fields?.student) && row.fields.student.length > 0);
+    assert(linkedRow, 'Airtable Student Calendar: field `student` link is empty');
+
+    const readableRow = studentCalendarRows.find((row) => String(row?.fields?.student_name_status || '').includes('•'));
+    assert(readableRow, 'Airtable Student Calendar: `student_name_status` is not populated');
+
+    const legacyReadable = studentCalendarRows.find((row) => String(row?.fields?.supabase_lesson_id || '').includes('•'));
+    assert(legacyReadable, 'Airtable Student Calendar: `supabase_lesson_id` is not human-readable');
+
+    logCheck('airtable-integrity', {
+      students_rows: studentsRecords.length,
+      calendar_rows: calendarRecords.length,
+      student_calendar_rows: studentCalendarRows.length,
+      current_level: currentLevel,
+      target_level: targetLevel,
+      student_linked: true,
+    });
+  }
 
   const outPath = path.resolve('.instructions/mvp_v3_endpoint_smoke_result.json');
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
