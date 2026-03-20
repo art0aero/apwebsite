@@ -132,3 +132,27 @@
   - email: `art.timokhin@gmail.com`
   - role: `methodist`
   - `allowlisted=true`
+
+## Iteration Update (2026-03-21, round 2)
+1. UX fixes
+- Goal select styled the same as lessons-per-week input.
+- Added selected-lesson highlight in calendar (persistent visual selection).
+- Added auth-session retry on `test -> tests -> results` transitions to reduce false logout redirects.
+
+2. Planning guards
+- Added strict backend guard in:
+  - `create-goal-and-plan`
+  - `recalculate-plan`
+- Rule: target level must be strictly higher than current level.
+- Verified via API check: lower/equal target now returns `400 Target level must be higher than current level`.
+
+3. AI gateway fix
+- Switched OpenAI base to `https://lite.genairus.ru` via `OPENAI_BASE_URL`.
+- Added model-compatibility fallback (`gpt-5-mini` and `openai/gpt-5-mini`).
+- Removed unsupported `temperature` for `gpt-5` chat-completions path.
+- Added explicit `openai_error` diagnostics in endpoint response for fallback cases.
+- Verified: `analyze-attempt-mistakes` returns `source: openai` on attempt with mistakes.
+
+4. Performance rerun
+- Latency probe rerun: `get-student-dashboard` p95 around `900ms`.
+- Conclusion unchanged: bottleneck is Supabase Edge/DB path, not GitHub runtime.

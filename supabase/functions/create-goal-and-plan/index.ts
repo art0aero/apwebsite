@@ -25,6 +25,15 @@ function normalizeCurrentLevelForPlan(rawLevel: string): string {
   return normalizeLevel(normalized);
 }
 
+function levelRank(level: string): number {
+  const order = ['A0', ...CEFR_LEVELS];
+  const normalized = String(level || '').trim().toUpperCase();
+  if (!normalized || normalized === 'BELOW A1') return 1;
+  if (normalized === 'A0') return 0;
+  const idx = order.indexOf(normalized as (typeof order)[number]);
+  return idx >= 0 ? idx : 1;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
@@ -50,6 +59,13 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     const currentLevel = normalizeCurrentLevelForPlan(String(latestAttempt?.level || 'A1'));
+    if (levelRank(targetLevel) <= levelRank(currentLevel)) {
+      return jsonResponse({
+        error: 'Target level must be higher than current level',
+        current_level: currentLevel,
+        target_level: targetLevel,
+      }, 400);
+    }
 
     const { data: curriculumRows, error: curriculumError } = await adminClient
       .from('study_curriculum')

@@ -112,7 +112,16 @@
         emailRedirectPath: '/tests.html',
       });
 
-      const user = await authController.init();
+      const initialUser = await authController.init();
+      let user = initialUser;
+      if (!user) {
+        for (let attempt = 0; attempt < 4; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 300 + (attempt * 200)));
+          user = await authController.checkAuth();
+          if (user) break;
+        }
+      }
+
       if (!user) {
         window.location.href = 'results.html';
         return;

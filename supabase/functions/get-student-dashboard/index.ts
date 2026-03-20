@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
         const [lessonRes, checkpointRes] = await Promise.all([
           adminClient
             .from('study_lessons')
-            .select('*')
+            .select('id,lesson_index,lesson_date,level,title,description,cost,status,is_checkpoint,checkpoint_level,is_final_test,priority_note')
             .eq('plan_version_id', selectedPlanId)
             .order('lesson_index', { ascending: true }),
           adminClient

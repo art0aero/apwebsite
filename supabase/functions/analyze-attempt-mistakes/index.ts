@@ -66,70 +66,159 @@ function fallbackAnalyze(rows: Array<{ question_text: string; question_level: st
   return { summary, items };
 }
 
-async function openAiAnalyze(rows: Array<{ question_text: string; question_level: string }>): Promise<{ summary: string; items: InsightItem[] } | null> {
-  const apiKey = Deno.env.get('OPENAI_API_KEY');
-  if (!apiKey) return null;
+function parseAiJsonContent(raw: unknown): { summary: string; items: InsightItem[] } | null {
+  if (typeof raw !== 'string' || !raw.trim()) return null;
 
-  const model = Deno.env.get('OPENAI_MODEL') || 'gpt-5-mini';
-  const endpoint = Deno.env.get('OPENAI_BASE_URL') || 'https://api.openai.com/v1/chat/completions';
-
-  const prompt = {
-    model,
-    temperature: 0.2,
-    response_format: { type: 'json_object' },
-    messages: [
-      {
-        role: 'system',
-        content:
-          'Ты методист английского. Верни JSON формата {"summary": string, "items": [{"issue": string, "why": string, "focus": string, "priority": "high|medium|low", "level": "A1|A2|B1|B2|C1|C2"}]}. Без лишнего текста.',
-      },
-      {
-        role: 'user',
-        content: `Ошибочные вопросы ученика: ${JSON.stringify(rows)}`,
-      },
-    ],
-  };
-
+  let parsed: Record<string, unknown>;
   try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(prompt),
-    });
-
-    if (!response.ok) return null;
-
-    const data = await response.json();
-    const content = data?.choices?.[0]?.message?.content;
-    if (!content) return null;
-
-    const parsed = JSON.parse(content);
-    if (!parsed || typeof parsed !== 'object') return null;
-
-    const rawItems = Array.isArray(parsed.items) ? parsed.items : [];
-    const items: InsightItem[] = rawItems
-      .map((item: unknown) => ({
-        issue: String((item as { issue?: string }).issue || '').trim(),
-        why: String((item as { why?: string }).why || '').trim(),
-        focus: String((item as { focus?: string }).focus || '').trim(),
-        priority: ['high', 'medium', 'low'].includes(String((item as { priority?: string }).priority))
-          ? (String((item as { priority?: string }).priority) as 'high' | 'medium' | 'low')
-          : 'medium',
-        level: String((item as { level?: string }).level || 'A1').trim().toUpperCase(),
-      }))
-      .filter((item) => item.issue && item.why && item.focus)
-      .slice(0, 8);
-
-    return {
-      summary: String(parsed.summary || '').trim() || 'Персональный разбор сформирован.',
-      items,
-    };
+    parsed = JSON.parse(raw) as Record<string, unknown>;
   } catch {
     return null;
   }
+
+  const rawItems = Array.isArray(parsed.items) ? parsed.items : [];
+  const items: InsightItem[] = rawItems
+    .map((item: unknown) => ({
+      issue: String((item as { issue?: string }).issue || '').trim(),
+      why: String((item as { why?: string }).why || '').trim(),
+      focus: String((item as { focus?: string }).focus || '').trim(),
+      priority: ['high', 'medium', 'low'].includes(String((item as { priority?: string }).priority))
+        ? (String((item as { priority?: string }).priority) as 'high' | 'medium' | 'low')
+        : 'medium',
+      level: String((item as { level?: string }).level || 'A1').trim().toUpperCase(),
+    }))
+    .filter((item) => item.issue && item.why && item.focus)
+    .slice(0, 8);
+
+  return {
+    summary: String(parsed.summary || '').trim() || 'Персональный разбор сформирован.',
+    items,
+  };
+}
+
+type OpenAiAnalyzeResult = {
+  result: { summary: string; items: InsightItem[] } | null;
+  error: string | null;
+};
+
+async function openAiAnalyze(rows: Array<{ question_text: string; question_level: string }>): Promise<OpenAiAnalyzeResult> {
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!apiKey) return { result: null, error: 'OPENAI_API_KEY is missing' };
+  if (!rows.length) return { result: null, error: 'No mistake rows for AI analysis' };
+
+  const configuredModel = Deno.env.get('OPENAI_MODEL') || 'gpt-5-mini';
+  const modelCandidates = [...new Set([
+    configuredModel,
+    configuredModel.startsWith('openai/') ? configuredModel.replace(/^openai\//, '') : `openai/${configuredModel}`,
+  ])];
+  const baseUrlRaw = String(Deno.env.get('OPENAI_BASE_URL') || 'https://api.openai.com').trim().replace(/\/+$/, '');
+  const baseUrl = baseUrlRaw.endsWith('/v1') ? baseUrlRaw.slice(0, -3) : baseUrlRaw;
+  const responsesUrl = `${baseUrl}/v1/responses`;
+  const chatCompletionsUrl = `${baseUrl}/v1/chat/completions`;
+  const systemText = 'Ты методист английского. Верни JSON формата {"summary": string, "items": [{"issue": string, "why": string, "focus": string, "priority": "high|medium|low", "level": "A1|A2|B1|B2|C1|C2"}]}. Без лишнего текста.';
+  const userText = `Ошибочные вопросы ученика: ${JSON.stringify(rows)}`;
+  let lastError = 'OpenAI request failed in both responses/chat modes';
+
+  for (const model of modelCandidates) {
+    try {
+      const response = await fetch(responsesUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          input: [
+            { role: 'system', content: [{ type: 'input_text', text: systemText }] },
+            { role: 'user', content: [{ type: 'input_text', text: userText }] },
+          ],
+          text: {
+            format: {
+              type: 'json_schema',
+              name: 'mistake_analysis',
+              strict: true,
+              schema: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  summary: { type: 'string' },
+                  items: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      additionalProperties: false,
+                      properties: {
+                        issue: { type: 'string' },
+                        why: { type: 'string' },
+                        focus: { type: 'string' },
+                        priority: { type: 'string', enum: ['high', 'medium', 'low'] },
+                        level: { type: 'string' },
+                      },
+                      required: ['issue', 'why', 'focus', 'priority', 'level'],
+                    },
+                  },
+                },
+                required: ['summary', 'items'],
+              },
+            },
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const parsed = parseAiJsonContent(data?.output_text || '');
+        if (parsed && parsed.items.length) return { result: parsed, error: null };
+        lastError = `OpenAI responses (${model}) returned empty or invalid JSON payload`;
+      } else {
+        const errorBody = await response.text();
+        const brief = errorBody.slice(0, 220);
+        lastError = response.status === 401
+          ? `OpenAI auth failed (${model}): ${brief}`
+          : `OpenAI responses failed (${response.status}, ${model}): ${brief}`;
+      }
+    } catch {
+      // Fall through to chat completions compatibility mode.
+    }
+
+    try {
+      const response = await fetch(chatCompletionsUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: systemText },
+            { role: 'user', content: userText },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        const brief = errorBody.slice(0, 220);
+        lastError = response.status === 401
+          ? `OpenAI auth failed (${model}): ${brief}`
+          : `OpenAI chat completions failed (${response.status}, ${model}): ${brief}`;
+        continue;
+      }
+
+      const data = await response.json();
+      const content = data?.choices?.[0]?.message?.content;
+      const parsed = parseAiJsonContent(content);
+      if (parsed && parsed.items.length) return { result: parsed, error: null };
+      lastError = `OpenAI chat completions (${model}) returned empty or invalid JSON payload`;
+    } catch {
+      // Try next model candidate.
+    }
+  }
+
+  return { result: null, error: lastError };
 }
 
 async function loadWrongRowsFromAttemptItems(
@@ -241,7 +330,8 @@ Deno.serve(async (req) => {
       rows = await loadWrongRowsFromLegacyAnswers(selectedResult, adminClient);
     }
 
-    const aiResult = await openAiAnalyze(rows);
+    const aiProbe = await openAiAnalyze(rows);
+    const aiResult = aiProbe.result;
     const fallbackResult = fallbackAnalyze(rows);
     const finalResult = aiResult && aiResult.items.length ? aiResult : fallbackResult;
     const source = aiResult && aiResult.items.length ? 'openai' : 'fallback';
@@ -298,6 +388,7 @@ Deno.serve(async (req) => {
       source,
       analyzed_attempt_id: attemptId || null,
       rows_count: rows.length,
+      openai_error: source === 'fallback' ? aiProbe.error : null,
     });
   } catch (error) {
     return jsonResponse({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);

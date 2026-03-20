@@ -137,7 +137,7 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <label class="text-sm">
               <span class="block text-neutral-500 mb-2">Целевой уровень</span>
-              <select id="goal-target-level" class="w-full px-4 py-3 rounded-xl border border-neutral-300 bg-neutral-50 outline-none focus:ring-2 focus:ring-[#215fc3]/30 focus:border-[#215fc3]">
+              <select id="goal-target-level" class="w-full px-4 py-3 rounded-xl border border-neutral-300 bg-white outline-none">
                 <option value="A1">A1</option>
                 <option value="A2">A2</option>
                 <option value="B1">B1</option>
@@ -332,6 +332,20 @@
       return escapeHTML(topicLine);
     }
 
+    function normalizeLevelForCompare(value) {
+      const raw = String(value || '').trim().toUpperCase();
+      if (!raw) return 'A1';
+      if (raw === 'BELOW A1' || raw === 'A0') return 'A0';
+      return raw;
+    }
+
+    function levelRank(level) {
+      const order = ['A0', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+      const normalized = normalizeLevelForCompare(level);
+      const idx = order.indexOf(normalized);
+      return idx >= 0 ? idx : 1;
+    }
+
     async function callEdge(name, payload = null, method = 'POST') {
       const token = await authController.getAccessToken();
       if (!token) throw new Error('Сессия истекла. Войдите снова.');
@@ -491,6 +505,7 @@
         document.getElementById('goal-toggle-btn').classList.add('hidden');
         setGoalConfigCollapsed(false);
       }
+      applyTargetLevelConstraints();
     }
 
     function setGoalConfigCollapsed(collapsed) {
@@ -505,6 +520,41 @@
         configWrap.classList.remove('hidden');
         toggleBtn.textContent = 'Свернуть параметры';
       }
+    }
+
+    function applyTargetLevelConstraints() {
+      const select = document.getElementById('goal-target-level');
+      const currentLevel = dashboard?.latest_test_result?.level || dashboard?.goal?.current_level || 'A1';
+      const currentRank = levelRank(currentLevel);
+      let selectedRank = levelRank(select.value);
+      let firstAllowed = null;
+
+      Array.from(select.options).forEach((option) => {
+        const allowed = levelRank(option.value) > currentRank;
+        option.disabled = !allowed;
+        option.hidden = false;
+        if (allowed && firstAllowed === null) firstAllowed = option.value;
+      });
+
+      if (selectedRank <= currentRank && firstAllowed) {
+        select.value = firstAllowed;
+        selectedRank = levelRank(select.value);
+      }
+
+      if (firstAllowed === null) {
+        Array.from(select.options).forEach((option) => {
+          option.disabled = true;
+        });
+      }
+    }
+
+    function validateGoalTargetOrNotify(targetLevel) {
+      const currentLevel = dashboard?.latest_test_result?.level || dashboard?.goal?.current_level || 'A1';
+      if (levelRank(targetLevel) <= levelRank(currentLevel)) {
+        alert(`Цель должна быть выше текущего уровня (${currentLevel}).`);
+        return false;
+      }
+      return true;
     }
 
     function renderResults() {
@@ -691,9 +741,10 @@
           const lessonsBox = dayCell.querySelector('div.space-y-1');
           dayLessons.slice(0, 4).forEach((lesson) => {
             const badge = lesson._is_level_milestone ? ' bg-[#f97316] text-white' : lesson.is_checkpoint ? ' bg-[#215fc3] text-white' : ' bg-white text-neutral-700';
+            const selected = selectedLessonKey === lesson._key ? ' ring-2 ring-neutral-900' : '';
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = `lesson-pill w-full text-left text-[10px] rounded px-1 py-1${badge}`;
+            btn.className = `lesson-pill w-full text-left text-[10px] rounded px-1 py-1${badge}${selected}`;
             btn.setAttribute('data-lesson-key', lesson._key);
             btn.textContent = lesson.title || 'Урок';
             lessonsBox.appendChild(btn);
@@ -757,9 +808,10 @@
           const lessonsBox = cell.querySelector('div.space-y-1');
           dayLessons.slice(0, 3).forEach((lesson) => {
             const badge = lesson._is_level_milestone ? ' bg-[#f97316] text-white' : lesson.is_checkpoint ? ' bg-[#215fc3] text-white' : ' bg-white text-neutral-700';
+            const selected = selectedLessonKey === lesson._key ? ' ring-2 ring-neutral-900' : '';
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = `lesson-pill w-full text-left text-[10px] rounded px-1 py-1${badge}`;
+            btn.className = `lesson-pill w-full text-left text-[10px] rounded px-1 py-1${badge}${selected}`;
             btn.setAttribute('data-lesson-key', lesson._key);
             btn.textContent = lesson.title || 'Урок';
             lessonsBox.appendChild(btn);
@@ -781,7 +833,7 @@
       container.querySelectorAll('[data-lesson-key]').forEach((el) => {
         el.addEventListener('click', () => {
           selectedLessonKey = String(el.getAttribute('data-lesson-key') || '');
-          renderLessonDetail();
+          renderCalendar();
         });
       });
 
@@ -828,7 +880,7 @@
       const client = authController.getClient();
       const { data, error } = await client
         .from('test_results')
-        .select('*')
+        .select('id,attempt_id,score,level,level_badge,mode,completed_at')
         .eq('user_id', currentUser.id)
         .order('completed_at', { ascending: false })
         .limit(40);
@@ -870,6 +922,8 @@
       const lessonsPerWeek = Number(document.getElementById('goal-lessons-per-week').value || 3);
       const preferredDays = getSelectedDays();
 
+      if (!validateGoalTargetOrNotify(targetLevel)) return;
+
       if (!preferredDays.length) {
         alert('Выберите хотя бы один день недели.');
         return;
@@ -890,6 +944,8 @@
       const targetLevel = document.getElementById('goal-target-level').value;
       const lessonsPerWeek = Number(document.getElementById('goal-lessons-per-week').value || 3);
       const preferredDays = getSelectedDays();
+
+      if (!validateGoalTargetOrNotify(targetLevel)) return;
 
       if (!preferredDays.length) {
         alert('Выберите хотя бы один день недели.');
@@ -921,9 +977,12 @@
 
     async function analyzeMistakes() {
       const fallbackAttempt = allResults.find((item) => item.attempt_id)?.attempt_id || null;
-      await callEdge('analyze-attempt-mistakes', {
+      const result = await callEdge('analyze-attempt-mistakes', {
         attempt_id: dashboard?.latest_test_result?.attempt_id || fallbackAttempt,
       });
+      if (result?.source === 'fallback' && result?.openai_error) {
+        console.warn('AI fallback reason:', result.openai_error);
+      }
       await loadDashboard();
     }
 
@@ -961,8 +1020,7 @@
           showSection('dashboard-section');
           document.getElementById('logout-btn').classList.remove('hidden');
           document.getElementById('take-test-btn').classList.remove('hidden');
-          await loadResultsHistory();
-          await loadDashboard();
+          await Promise.all([loadResultsHistory(), loadDashboard()]);
         } catch (error) {
           setAuthError(error.message || 'Ошибка входа');
         }
@@ -984,8 +1042,7 @@
           showSection('dashboard-section');
           document.getElementById('logout-btn').classList.remove('hidden');
           document.getElementById('take-test-btn').classList.remove('hidden');
-          await loadResultsHistory();
-          await loadDashboard();
+          await Promise.all([loadResultsHistory(), loadDashboard()]);
         } catch (error) {
           setAuthError(error.message || 'Ошибка регистрации');
         }
@@ -1045,6 +1102,16 @@
       document.getElementById('dog-close').addEventListener('click', closeDogPanel);
     }
 
+    async function resolveUserWithRetries(initialUser) {
+      if (initialUser) return initialUser;
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 300 + (attempt * 200)));
+        const retryUser = await authController.checkAuth();
+        if (retryUser) return retryUser;
+      }
+      return null;
+    }
+
     async function init() {
       bindEvents();
       authController = window.AppAuth.createAuthController({
@@ -1055,7 +1122,8 @@
         },
       });
 
-      const user = await authController.init();
+      const initialUser = await authController.init();
+      const user = await resolveUserWithRetries(initialUser);
       if (!user) {
         showSection('auth-section');
         return;
@@ -1066,8 +1134,7 @@
       document.getElementById('take-test-btn').classList.remove('hidden');
       showSection('dashboard-section');
 
-      await loadResultsHistory();
-      await loadDashboard();
+      await Promise.all([loadResultsHistory(), loadDashboard()]);
 
       const url = new URL(window.location.href);
       if (url.searchParams.get('open_goal') === '1') {
