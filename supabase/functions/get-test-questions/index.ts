@@ -2,6 +2,9 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 type RequestPayload = {
   count?: number;
+  test_id?: string;
+  mode?: 'placement' | 'checkpoint' | 'final';
+  target_level?: string;
 };
 
 type QuestionRow = {
@@ -40,6 +43,8 @@ function normalizeOptions(options: unknown): string[] {
   if (!Array.isArray(options)) return [];
   return options.map((value) => String(value));
 }
+
+const ALLOWED_MODES = new Set(['placement', 'checkpoint', 'final']);
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -90,6 +95,10 @@ Deno.serve(async (req) => {
 
     const requestedCount = Number(payload.count ?? 50);
     const count = Number.isFinite(requestedCount) ? Math.min(100, Math.max(1, Math.round(requestedCount))) : 50;
+    const testId = String(payload.test_id || 'english-placement').trim() || 'english-placement';
+    const requestedMode = String(payload.mode || 'placement').trim().toLowerCase();
+    const mode = ALLOWED_MODES.has(requestedMode) ? requestedMode : 'placement';
+    const targetLevel = String(payload.target_level || '').trim().toUpperCase() || null;
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
@@ -158,6 +167,9 @@ Deno.serve(async (req) => {
       cycle_reset: cycleReset,
       total_question_bank: allQuestions.length,
       unseen_before_request: unseen.length,
+      test_id: testId,
+      mode,
+      target_level: targetLevel,
     });
   } catch (error) {
     return jsonResponse({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);

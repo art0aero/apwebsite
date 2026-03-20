@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>АР | Админка методистов</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Montserrat', sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen bg-[#ece4dc] text-neutral-900">
+  <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-white/80">
+    <div class="max-w-7xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
+      <div>
+        <p class="text-xs uppercase tracking-[0.2em] text-neutral-500">Methodist Panel</p>
+        <h1 class="text-2xl font-light tracking-tight">Админка методистов</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="results.html" class="px-4 py-2 rounded-full text-xs uppercase tracking-widest font-semibold bg-white border border-neutral-200">К кабинету</a>
+        <button id="logout-btn" class="hidden px-4 py-2 rounded-full text-xs uppercase tracking-widest font-semibold bg-neutral-900 text-white">Выйти</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 md:px-6 py-6">
+    <section id="auth-section" class="max-w-md mx-auto mt-10">
+      <div class="bg-neutral-900 text-white rounded-3xl p-8 shadow-2xl">
+        <h2 class="text-2xl font-light mb-4">Вход для методиста</h2>
+        <p class="text-sm text-neutral-300 mb-4">Доступ только для allowlist email + role=methodist/admin.</p>
+        <div id="auth-error" class="hidden mb-4 p-3 rounded-lg text-xs uppercase tracking-widest bg-red-500/10 border border-red-500/30 text-red-400"></div>
+        <form id="login-form" class="space-y-4">
+          <input type="email" required placeholder="Email" class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 outline-none focus:border-[#f19737]">
+          <input type="password" required placeholder="Password" class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 outline-none focus:border-[#f19737]">
+          <button class="w-full py-3 rounded-xl bg-[#215fc3] hover:bg-[#1a4da1] text-sm uppercase tracking-widest font-semibold">Войти</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="admin-section" class="hidden">
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <article class="bg-white rounded-3xl p-5 shadow-xl border border-white/70 xl:col-span-1">
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <h2 class="text-xl font-light tracking-tight">Ученики</h2>
+            <div class="flex items-center gap-2">
+              <button id="airtable-sync-btn" class="px-3 py-2 rounded-full bg-[#f19737] text-neutral-900 text-[10px] uppercase tracking-widest font-semibold">Sync Airtable</button>
+              <button id="export-btn" class="px-3 py-2 rounded-full bg-neutral-900 text-white text-[10px] uppercase tracking-widest font-semibold">CSV</button>
+            </div>
+          </div>
+          <input id="student-search" type="text" placeholder="Поиск: email / ФИО" class="w-full px-3 py-2 rounded-xl border border-neutral-300 bg-white mb-3">
+          <div id="students-list" class="space-y-2 max-h-[70vh] overflow-auto pr-1"></div>
+        </article>
+
+        <article class="bg-white rounded-3xl p-5 shadow-xl border border-white/70 xl:col-span-2">
+          <div id="student-empty" class="text-neutral-500">Выберите ученика слева.</div>
+
+          <div id="student-details" class="hidden space-y-6">
+            <section>
+              <h2 class="text-2xl font-light tracking-tight mb-2">Карточка ученика</h2>
+              <div id="student-profile" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm"></div>
+            </section>
+
+            <section>
+              <h3 class="text-xl font-light tracking-tight mb-2">Попытки тестов</h3>
+              <div id="attempts-list" class="space-y-2"></div>
+            </section>
+
+            <section>
+              <h3 class="text-xl font-light tracking-tight mb-2">Просмотр попытки</h3>
+              <div id="attempt-review" class="max-h-[16rem] overflow-auto border border-neutral-200 rounded-2xl p-3 bg-neutral-50 text-sm"></div>
+            </section>
+
+            <section>
+              <h3 class="text-xl font-light tracking-tight mb-2">Ручное управление занятиями</h3>
+              <div class="mb-3 p-3 rounded-2xl border border-neutral-200 bg-neutral-50">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-sm font-medium">Усиление B1</p>
+                    <p id="b1-plus-status" class="text-xs text-neutral-500 mt-1">Недоступно для текущей цели.</p>
+                  </div>
+                  <button id="b1-plus-toggle" class="px-4 py-2 rounded-full bg-[#215fc3] text-white text-xs uppercase tracking-widest font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                    Включить
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <select id="lesson-select" class="px-3 py-2 rounded-xl border border-neutral-300 bg-white"></select>
+                <input id="lesson-date" type="date" class="px-3 py-2 rounded-xl border border-neutral-300 bg-white">
+                <input id="lesson-level" type="text" placeholder="Уровень (A1..C2)" class="px-3 py-2 rounded-xl border border-neutral-300 bg-white">
+                <input id="lesson-title" type="text" placeholder="Название" class="px-3 py-2 rounded-xl border border-neutral-300 bg-white">
+                <select id="lesson-status" class="px-3 py-2 rounded-xl border border-neutral-300 bg-white">
+                  <option value="planned">planned</option>
+                  <option value="completed">completed</option>
+                  <option value="missed">missed</option>
+                  <option value="rescheduled">rescheduled</option>
+                </select>
+                <input id="lesson-cost" type="number" placeholder="Стоимость" class="px-3 py-2 rounded-xl border border-neutral-300 bg-white">
+              </div>
+              <textarea id="lesson-description" placeholder="Описание" class="w-full px-3 py-2 rounded-xl border border-neutral-300 bg-white h-24 mb-3"></textarea>
+              <div class="flex flex-wrap gap-2">
+                <button id="lesson-add" class="px-4 py-2 rounded-full bg-[#215fc3] text-white text-xs uppercase tracking-widest font-semibold">Добавить</button>
+                <button id="lesson-update" class="px-4 py-2 rounded-full bg-[#f19737] text-neutral-900 text-xs uppercase tracking-widest font-semibold">Обновить</button>
+                <button id="lesson-delete" class="px-4 py-2 rounded-full bg-red-600 text-white text-xs uppercase tracking-widest font-semibold">Удалить</button>
+              </div>
+              <p class="text-xs text-neutral-500 mt-2">Все изменения пишутся в журнал аудита.</p>
+            </section>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared/auth.js"></script>
+  <script>
+    let authController = null;
+    let adminData = null;
+    let selectedStudent = null;
+    let selectedDetails = null;
+
+    async function callEdge(name, payload = null, method = 'POST') {
+      const token = await authController.getAccessToken();
+      if (!token) throw new Error('Сессия истекла');
+      const response = await fetch(`${window.AppAuth.SUPABASE_URL}/functions/v1/${name}`, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: window.AppAuth.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: payload && method !== 'GET' ? JSON.stringify(payload) : undefined,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || `Edge ${name} failed`);
+      return result;
+    }
+
+    function showAuthError(message) {
+      const el = document.getElementById('auth-error');
+      el.textContent = message;
+      el.classList.remove('hidden');
+    }
+
+    function toggleSections(isAdmin) {
+      document.getElementById('auth-section').classList.toggle('hidden', isAdmin);
+      document.getElementById('admin-section').classList.toggle('hidden', !isAdmin);
+      document.getElementById('logout-btn').classList.toggle('hidden', !isAdmin);
+    }
+
+    function renderStudents() {
+      const list = document.getElementById('students-list');
+      list.innerHTML = '';
+
+      const term = document.getElementById('student-search').value.trim().toLowerCase();
+      const rows = (adminData?.students || []).filter((item) => {
+        const email = String(item.profile?.email || '').toLowerCase();
+        const name = String(item.profile?.full_name || '').toLowerCase();
+        return !term || email.includes(term) || name.includes(term);
+      });
+
+      if (!rows.length) {
+        list.innerHTML = '<p class="text-neutral-500 text-sm">Совпадений нет.</p>';
+        return;
+      }
+
+      rows.forEach((item) => {
+        const button = document.createElement('button');
+        const isActive = selectedStudent?.profile?.user_id === item.profile?.user_id;
+        button.className = `w-full text-left p-3 rounded-2xl border ${isActive ? 'border-[#215fc3] bg-[#eff6ff]' : 'border-neutral-200 bg-neutral-50 hover:bg-neutral-100'}`;
+        button.innerHTML = `
+          <p class="font-medium">${item.profile?.full_name || 'Без ФИО'}</p>
+          <p class="text-xs text-neutral-500 mt-1">${item.profile?.email || ''}</p>
+          <div class="mt-2 flex flex-wrap gap-1 text-[10px] uppercase tracking-widest">
+            <span class="px-2 py-1 rounded-full ${item.profile?.is_completed ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">профиль ${item.profile?.is_completed ? 'ok' : 'missing'}</span>
+            <span class="px-2 py-1 rounded-full bg-neutral-200 text-neutral-700">${item.latest_test?.level || '-'}</span>
+          </div>
+        `;
+        button.addEventListener('click', async () => {
+          await selectStudent(item);
+        });
+        list.appendChild(button);
+      });
+    }
+
+    function renderSelectedStudent() {
+      const empty = document.getElementById('student-empty');
+      const details = document.getElementById('student-details');
+
+      if (!selectedStudent) {
+        empty.classList.remove('hidden');
+        details.classList.add('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      details.classList.remove('hidden');
+
+      const profileEl = document.getElementById('student-profile');
+      profileEl.innerHTML = `
+        <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200"><b>Email:</b><br>${selectedStudent.profile?.email || '-'}</div>
+        <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200"><b>ФИО:</b><br>${selectedStudent.profile?.full_name || '-'}</div>
+        <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200"><b>Телефон:</b><br>${selectedStudent.profile?.phone_e164 || '-'}</div>
+        <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200"><b>Цель:</b><br>${selectedStudent.goal?.target_level || '-'}</div>
+        <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200"><b>Остаток:</b><br>${Number(selectedStudent.active_plan?.remaining_cost || 0).toLocaleString('ru-RU')} ₽</div>
+        <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200"><b>Финиш:</b><br>${selectedStudent.active_plan?.end_date || '-'}</div>
+        <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200"><b>B1+:</b><br>${selectedStudent.goal?.b1_plus_enabled ? 'Включено' : 'Выключено'}</div>
+      `;
+
+      const attemptsList = document.getElementById('attempts-list');
+      attemptsList.innerHTML = '';
+      (selectedDetails?.attempts || []).forEach((attempt) => {
+        const row = document.createElement('button');
+        row.className = 'w-full text-left p-3 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100';
+        row.innerHTML = `
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <p class="font-medium">${attempt.level_badge || attempt.level}</p>
+              <p class="text-xs text-neutral-500">${new Date(attempt.completed_at).toLocaleString('ru-RU')}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-lg font-light">${attempt.score || 0}%</p>
+              <p class="text-[10px] uppercase tracking-widest text-neutral-500">${attempt.mode || 'placement'}</p>
+            </div>
+          </div>
+        `;
+        row.addEventListener('click', async () => {
+          await loadAttemptReview(attempt.attempt_id);
+        });
+        attemptsList.appendChild(row);
+      });
+
+      renderLessonsForm();
+      renderB1PlusControl();
+    }
+
+    function rankLevel(level) {
+      const normalized = String(level || '').trim().toUpperCase();
+      if (normalized === 'A0' || normalized === 'BELOW A1') return 0;
+      if (normalized === 'A1') return 1;
+      if (normalized === 'A2') return 2;
+      if (normalized === 'B1') return 3;
+      if (normalized === 'B2') return 4;
+      if (normalized === 'C1') return 5;
+      if (normalized === 'C2') return 6;
+      return 1;
+    }
+
+    function isB1PlusAvailable(goal) {
+      const currentRank = rankLevel(goal?.current_level || 'A1');
+      const targetRank = rankLevel(goal?.target_level || 'A1');
+      return currentRank <= 3 && targetRank >= 4;
+    }
+
+    function renderB1PlusControl() {
+      const status = document.getElementById('b1-plus-status');
+      const button = document.getElementById('b1-plus-toggle');
+      const goal = selectedStudent?.goal;
+
+      if (!goal) {
+        status.textContent = 'У ученика нет активной цели.';
+        button.disabled = true;
+        button.textContent = 'Включить';
+        return;
+      }
+
+      const available = isB1PlusAvailable(goal);
+      const enabled = Boolean(goal?.b1_plus_enabled);
+
+      if (!available) {
+        status.textContent = 'Доступно только для целей B2/C1/C2.';
+        button.disabled = true;
+      } else {
+        status.textContent = enabled
+          ? 'Усиление активно: в план включается программа B1+.'
+          : 'Усиление выключено: используется только базовый трек B1-B2.';
+        button.disabled = false;
+      }
+
+      button.textContent = enabled ? 'Выключить' : 'Включить';
+    }
+
+    function renderLessonsForm() {
+      const select = document.getElementById('lesson-select');
+      select.innerHTML = '';
+      (selectedDetails?.lessons || []).forEach((lesson) => {
+        const option = document.createElement('option');
+        option.value = lesson.id;
+        option.textContent = `#${lesson.lesson_index} ${lesson.lesson_date} • ${lesson.title}`;
+        select.appendChild(option);
+      });
+
+      if ((selectedDetails?.lessons || []).length) {
+        fillLessonForm(selectedDetails.lessons[0]);
+      }
+    }
+
+    function fillLessonForm(lesson) {
+      if (!lesson) return;
+      document.getElementById('lesson-date').value = lesson.lesson_date || '';
+      document.getElementById('lesson-level').value = lesson.level || '';
+      document.getElementById('lesson-title').value = lesson.title || '';
+      document.getElementById('lesson-description').value = lesson.description || '';
+      document.getElementById('lesson-status').value = lesson.status || 'planned';
+      document.getElementById('lesson-cost').value = lesson.cost || 0;
+    }
+
+    async function loadAttemptReview(attemptId) {
+      if (!attemptId) return;
+      const review = await callEdge('get-attempt-review', { attempt_id: attemptId });
+      const container = document.getElementById('attempt-review');
+      const rows = review.rows || [];
+
+      if (!rows.length) {
+        container.innerHTML = '<p class="text-neutral-500">Нет данных по попытке.</p>';
+        return;
+      }
+
+      container.innerHTML = rows.map((row, index) => `
+        <div class="py-2 ${index ? 'border-t border-neutral-200' : ''}">
+          <p class="font-medium mb-1">${row.question_text}</p>
+          <p class="text-xs ${row.is_correct ? 'text-green-700' : 'text-red-700'}">
+            Ответ ученика: ${row.selected_option_text || '-'}
+            ${row.is_correct ? '✓' : ` | Правильный: ${row.correct_option_text || '-'}`}
+          </p>
+        </div>
+      `).join('');
+    }
+
+    async function selectStudent(item) {
+      selectedStudent = item;
+      const detailData = await callEdge('get-admin-dashboard', { student_user_id: item.profile.user_id });
+      selectedDetails = detailData.selected_student || { attempts: [], lessons: [], insights: [] };
+      renderStudents();
+      renderSelectedStudent();
+    }
+
+    async function refreshAdminData() {
+      adminData = await callEdge('get-admin-dashboard', null, 'POST');
+      renderStudents();
+      renderSelectedStudent();
+    }
+
+    async function mutateLesson(action) {
+      if (!selectedStudent?.active_plan?.id) {
+        alert('У ученика нет активного плана.');
+        return;
+      }
+
+      const lessonId = document.getElementById('lesson-select').value;
+      const payload = {
+        action,
+        student_user_id: selectedStudent.profile.user_id,
+        plan_version_id: selectedStudent.active_plan.id,
+        lesson_id: action === 'add' ? null : lessonId,
+        lesson: {
+          lesson_date: document.getElementById('lesson-date').value,
+          level: document.getElementById('lesson-level').value,
+          title: document.getElementById('lesson-title').value,
+          description: document.getElementById('lesson-description').value,
+          status: document.getElementById('lesson-status').value,
+          cost: Number(document.getElementById('lesson-cost').value || 0),
+        },
+      };
+
+      if (action === 'delete') {
+        const ok = confirm('Удалить выбранное занятие?');
+        if (!ok) return;
+      }
+
+      await callEdge('admin-update-lessons', payload);
+      await selectStudent(selectedStudent);
+      await refreshAdminData();
+    }
+
+    async function toggleB1Plus() {
+      if (!selectedStudent?.profile?.user_id || !selectedStudent?.goal) return;
+      if (!isB1PlusAvailable(selectedStudent.goal)) return;
+
+      const button = document.getElementById('b1-plus-toggle');
+      const initialText = button.textContent;
+      button.disabled = true;
+      button.textContent = '...';
+
+      try {
+        const nextEnabled = !Boolean(selectedStudent.goal?.b1_plus_enabled);
+        await callEdge('admin-toggle-b1-plus', {
+          student_user_id: selectedStudent.profile.user_id,
+          enabled: nextEnabled,
+        });
+
+        await refreshAdminData();
+        const refreshed = (adminData?.students || []).find((item) => item.profile?.user_id === selectedStudent.profile?.user_id);
+        if (refreshed) await selectStudent(refreshed);
+      } catch (error) {
+        alert(error.message || 'Не удалось переключить B1+');
+      } finally {
+        button.disabled = false;
+        button.textContent = initialText;
+      }
+    }
+
+    async function runAirtableSync() {
+      const button = document.getElementById('airtable-sync-btn');
+      const initialText = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Sync...';
+
+      try {
+        const result = await callEdge('sync-attendance-airtable', { trigger: 'manual_admin_sync' });
+        await refreshAdminData();
+        if (selectedStudent) {
+          const freshSelected = (adminData?.students || []).find((item) => item.profile?.user_id === selectedStudent.profile?.user_id);
+          if (freshSelected) await selectStudent(freshSelected);
+        }
+
+        const pull = result.pull || {};
+        const push = result.push || {};
+        alert(
+          `Синк завершен.\n` +
+          `Pull: обработано ${pull.processed || 0}, пропущено ${pull.skipped || 0}, затронуто уроков ${pull.affected_lessons || 0}.\n` +
+          `Push: создано ${push.created || 0}, обновлено ${push.updated || 0}, guard-пропусков ${push.guard_skipped || 0}.`,
+        );
+      } catch (error) {
+        alert(error.message || 'Синк Airtable не выполнен');
+      } finally {
+        button.disabled = false;
+        button.textContent = initialText;
+      }
+    }
+
+    function exportCsv() {
+      const rows = (adminData?.students || []).map((item) => ({
+        email: item.profile?.email || '',
+        full_name: item.profile?.full_name || '',
+        phone: item.profile?.phone_e164 || '',
+        profile_completed: item.profile?.is_completed ? 'yes' : 'no',
+        level: item.latest_test?.level || '',
+        score: item.latest_test?.score || '',
+        target_level: item.goal?.target_level || '',
+        remaining_cost: item.active_plan?.remaining_cost || '',
+        end_date: item.active_plan?.end_date || '',
+      }));
+
+      if (!rows.length) {
+        alert('Нет данных для экспорта');
+        return;
+      }
+
+      const header = Object.keys(rows[0]);
+      const csv = [header.join(','), ...rows.map((row) => header.map((key) => `"${String(row[key]).replaceAll('"', '""')}"`).join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `students_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function bindEvents() {
+      document.getElementById('student-search').addEventListener('input', renderStudents);
+      document.getElementById('lesson-select').addEventListener('change', (event) => {
+        const lesson = (selectedDetails?.lessons || []).find((item) => item.id === event.target.value);
+        fillLessonForm(lesson);
+      });
+      document.getElementById('lesson-add').addEventListener('click', () => mutateLesson('add'));
+      document.getElementById('lesson-update').addEventListener('click', () => mutateLesson('update'));
+      document.getElementById('lesson-delete').addEventListener('click', () => mutateLesson('delete'));
+      document.getElementById('b1-plus-toggle').addEventListener('click', toggleB1Plus);
+      document.getElementById('export-btn').addEventListener('click', exportCsv);
+      document.getElementById('airtable-sync-btn').addEventListener('click', runAirtableSync);
+      document.getElementById('logout-btn').addEventListener('click', async () => {
+        await authController.signOut();
+        toggleSections(false);
+      });
+
+      document.getElementById('login-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const email = event.target.querySelector('input[type="email"]').value;
+        const password = event.target.querySelector('input[type="password"]').value;
+        try {
+          await authController.login(email, password);
+          toggleSections(true);
+          await refreshAdminData();
+        } catch (error) {
+          showAuthError(error.message || 'Не удалось войти');
+        }
+      });
+    }
+
+    async function init() {
+      bindEvents();
+      authController = window.AppAuth.createAuthController({
+        redirectPath: '/admin.html',
+        emailRedirectPath: '/admin.html',
+      });
+
+      const user = await authController.init();
+      if (!user) {
+        toggleSections(false);
+        return;
+      }
+
+      try {
+        await refreshAdminData();
+        toggleSections(true);
+      } catch (error) {
+        toggleSections(false);
+        showAuthError(error.message || 'Доступ запрещен');
+      }
+    }
+
+    init().catch((error) => {
+      console.error(error);
+      showAuthError(error.message || 'Ошибка загрузки админки');
+      toggleSections(false);
+    });
+  </script>
+</body>
+</html>

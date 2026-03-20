@@ -6,7 +6,10 @@ Returns a randomized set of test questions for the authenticated user.
 
 ```json
 {
-  "count": 50
+  "count": 50,
+  "test_id": "english-placement",
+  "mode": "placement",
+  "target_level": "B2"
 }
 ```
 
@@ -25,7 +28,10 @@ Returns a randomized set of test questions for the authenticated user.
   "count": 50,
   "cycle_reset": false,
   "total_question_bank": 500,
-  "unseen_before_request": 240
+  "unseen_before_request": 240,
+  "test_id": "english-placement",
+  "mode": "placement",
+  "target_level": "B2"
 }
 ```
 
