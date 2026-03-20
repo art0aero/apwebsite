@@ -12,6 +12,21 @@ type InsightItem = {
   level: string;
 };
 
+type WrongRow = {
+  question_text: string;
+  question_level: string;
+};
+
+type TestAnswer = {
+  question_id?: number;
+  selected_option?: number;
+};
+
+type TestResultRow = {
+  attempt_id?: string | null;
+  answers?: TestAnswer[] | null;
+};
+
 function fallbackAnalyze(rows: Array<{ question_text: string; question_level: string }>): { summary: string; items: InsightItem[] } {
   const levelStats = new Map<string, number>();
   const buckets = new Map<string, string[]>();
@@ -117,6 +132,71 @@ async function openAiAnalyze(rows: Array<{ question_text: string; question_level
   }
 }
 
+async function loadWrongRowsFromAttemptItems(
+  userId: string,
+  attemptId: string,
+  adminClient: any,
+): Promise<WrongRow[]> {
+  if (!attemptId) return [];
+
+  const { data, error } = await adminClient
+    .from('attempt_items')
+    .select('question_text,question_level')
+    .eq('user_id', userId)
+    .eq('attempt_id', attemptId)
+    .eq('is_correct', false)
+    .order('created_at', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return (data || []) as WrongRow[];
+}
+
+async function loadWrongRowsFromLegacyAnswers(
+  testResult: TestResultRow | null,
+  adminClient: any,
+): Promise<WrongRow[]> {
+  if (!testResult || !Array.isArray(testResult.answers) || !testResult.answers.length) return [];
+
+  const normalizedAnswers = testResult.answers
+    .map((item) => ({
+      question_id: Number(item?.question_id),
+      selected_option: Number(item?.selected_option),
+    }))
+    .filter((item) => Number.isInteger(item.question_id) && item.question_id > 0 && Number.isInteger(item.selected_option));
+
+  if (!normalizedAnswers.length) return [];
+
+  const questionIds = [...new Set(normalizedAnswers.map((item) => item.question_id))];
+  const { data: questions, error: questionError } = await adminClient
+    .from('question_bank')
+    .select('id,question_text,level,correct_option')
+    .in('id', questionIds);
+
+  if (questionError) throw new Error(questionError.message);
+
+  const questionMap = new Map<number, { question_text: string; level: string; correct_option: number }>();
+  for (const row of questions || []) {
+    questionMap.set(Number((row as { id: number }).id), {
+      question_text: String((row as { question_text?: string }).question_text || ''),
+      level: String((row as { level?: string }).level || 'A1'),
+      correct_option: Number((row as { correct_option?: number }).correct_option ?? -1),
+    });
+  }
+
+  const wrongRows: WrongRow[] = [];
+  for (const item of normalizedAnswers) {
+    const question = questionMap.get(item.question_id);
+    if (!question) continue;
+    if (item.selected_option === question.correct_option) continue;
+    wrongRows.push({
+      question_text: question.question_text,
+      question_level: question.level,
+    });
+  }
+
+  return wrongRows;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
@@ -125,32 +205,41 @@ Deno.serve(async (req) => {
     const { user, adminClient } = await getAuthContext(req);
     const payload = await parseJson<Payload>(req);
 
-    let attemptId = String(payload.attempt_id || '').trim();
-    if (!attemptId) {
-      const { data: latest } = await adminClient
+    const requestedAttemptId = String(payload.attempt_id || '').trim();
+    let selectedResult: TestResultRow | null = null;
+
+    if (requestedAttemptId) {
+      const { data: requestedResult, error: requestedError } = await adminClient
         .from('test_results')
-        .select('attempt_id,completed_at')
+        .select('attempt_id,answers,completed_at')
         .eq('user_id', user.id)
-        .not('attempt_id', 'is', null)
+        .eq('attempt_id', requestedAttemptId)
+        .maybeSingle();
+
+      if (requestedError) throw new Error(requestedError.message);
+      selectedResult = (requestedResult as TestResultRow | null) || null;
+    }
+
+    if (!selectedResult) {
+      const { data: latestResult, error: latestError } = await adminClient
+        .from('test_results')
+        .select('attempt_id,answers,completed_at')
+        .eq('user_id', user.id)
         .order('completed_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      attemptId = String(latest?.attempt_id || '').trim();
+
+      if (latestError) throw new Error(latestError.message);
+      selectedResult = (latestResult as TestResultRow | null) || null;
     }
 
-    if (!attemptId) return jsonResponse({ error: 'No attempt_id found for analysis' }, 404);
+    if (!selectedResult) return jsonResponse({ error: 'No attempts found for analysis' }, 404);
 
-    const { data: wrongRows, error: wrongError } = await adminClient
-      .from('attempt_items')
-      .select('question_text,question_level')
-      .eq('user_id', user.id)
-      .eq('attempt_id', attemptId)
-      .eq('is_correct', false)
-      .order('created_at', { ascending: true });
-
-    if (wrongError) throw new Error(wrongError.message);
-
-    const rows = (wrongRows || []) as Array<{ question_text: string; question_level: string }>;
+    const attemptId = String(selectedResult.attempt_id || '').trim();
+    let rows = await loadWrongRowsFromAttemptItems(user.id, attemptId, adminClient);
+    if (!rows.length) {
+      rows = await loadWrongRowsFromLegacyAnswers(selectedResult, adminClient);
+    }
 
     const aiResult = await openAiAnalyze(rows);
     const fallbackResult = fallbackAnalyze(rows);
@@ -170,7 +259,7 @@ Deno.serve(async (req) => {
       .from('ai_insights')
       .insert({
         user_id: user.id,
-        attempt_id: attemptId,
+        attempt_id: attemptId || null,
         plan_version_id: activePlan?.id || null,
         source,
         summary: finalResult.summary,
@@ -207,6 +296,8 @@ Deno.serve(async (req) => {
     return jsonResponse({
       insight: insightRow,
       source,
+      analyzed_attempt_id: attemptId || null,
+      rows_count: rows.length,
     });
   } catch (error) {
     return jsonResponse({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);

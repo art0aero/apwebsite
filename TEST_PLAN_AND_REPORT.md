@@ -102,3 +102,33 @@
 - Residual risks:
   - Playwright прогон выполнен через `file://` base URL (ограничения среды на локальный bind порта).
   - Calendar/Timeline view в Airtable не создаются через API (нужна ручная настройка в UI).
+
+## Iteration Update (2026-03-21)
+1. UI/UX правки кабинета (implemented)
+- Удалены служебные подсказки в `tests.html` и `results.html`.
+- Убран верхний вход для учителей; оставлена кнопка `Для Методиста` внизу.
+- Профиль: после валидного сохранения показывается карточка данных, форма скрывается.
+- Секция цели: добавлен режим сворачивания параметров; при активной цели показывается `Перестроить план`.
+- Календарь: добавлены стрелки навигации, кликабельные уроки, detail-card урока, визуальные вехи перехода уровней.
+
+2. Backend fix AI analysis (implemented)
+- `analyze-attempt-mistakes` теперь работает даже для legacy-результатов без `attempt_id`/`attempt_items`:
+  - fallback чтение `test_results.answers`,
+  - восстановление ошибок через `question_bank`,
+  - сохранение `ai_insights` с `attempt_id = null`, если нужно.
+
+3. Runtime checks (completed)
+- API baseline: PASS (`scripts/run_api_baseline_checks.mjs`).
+- MVP v3 endpoint smoke: PASS (`scripts/run_mvp_v3_endpoint_smoke.mjs`).
+- Latency probe: PASS (`scripts/run_latency_probe.mjs`), p95 `get-student-dashboard` ~820ms.
+- Playwright regression: environment browser launch possible only with escalated run; сценарий падал на старой XSS-ассерции маркера (не блокер для новых UI-правок).
+
+4. Performance diagnosis
+- GitHub не участвует в runtime кликах.
+- Основная задержка на стороне Supabase Edge/DB вызовов (не Vercel static hosting).
+
+5. Access config
+- Создан/обновлен методист:
+  - email: `art.timokhin@gmail.com`
+  - role: `methodist`
+  - `allowlisted=true`

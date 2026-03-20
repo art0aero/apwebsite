@@ -16,6 +16,7 @@
     .glass { backdrop-filter: blur(10px); background: rgba(255,255,255,0.72); }
     .dog-float { box-shadow: 0 14px 35px rgba(88, 42, 18, 0.35); }
     .calendar-cell { min-height: 104px; }
+    .lesson-pill { cursor: pointer; }
   </style>
 </head>
 <body class="bg-[#ece4dc] text-neutral-900 min-h-screen">
@@ -24,7 +25,6 @@
       <a href="index.html" class="font-semibold tracking-widest uppercase">АР</a>
       <div class="flex items-center gap-2 md:gap-3">
         <button id="take-test-btn" class="hidden text-xs md:text-sm font-semibold uppercase tracking-widest text-white bg-[#215fc3] px-4 py-2 rounded-full hover:bg-[#1a4da1]">Пройти тест</button>
-        <a href="admin.html" class="text-xs md:text-sm font-semibold uppercase tracking-widest text-neutral-700 bg-white/70 px-4 py-2 rounded-full border border-white/70 hover:bg-white">Вход для учителей</a>
         <button id="logout-btn" class="hidden text-xs md:text-sm font-semibold uppercase tracking-widest text-neutral-700 bg-white/70 px-4 py-2 rounded-full border border-white/70 hover:bg-white">Выйти</button>
       </div>
     </div>
@@ -72,19 +72,32 @@
             <h2 class="text-2xl font-light tracking-tight">Профиль ученика</h2>
             <span id="profile-status" class="text-xs uppercase tracking-widest px-3 py-1 rounded-full bg-red-100 text-red-700">Незаполнен</span>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div id="profile-read-card" class="hidden rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+            <p class="text-xs uppercase tracking-widest text-neutral-500 mb-3">Личные данные</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <div class="rounded-xl bg-white border border-neutral-200 px-4 py-3">
+                <p class="text-[11px] uppercase tracking-widest text-neutral-500 mb-1">ФИО</p>
+                <p id="profile-card-full-name" class="font-medium text-neutral-900">-</p>
+              </div>
+              <div class="rounded-xl bg-white border border-neutral-200 px-4 py-3">
+                <p class="text-[11px] uppercase tracking-widest text-neutral-500 mb-1">Телефон</p>
+                <p id="profile-card-phone" class="font-medium text-neutral-900">-</p>
+              </div>
+            </div>
+            <button id="edit-profile-btn" class="px-4 py-2 rounded-full bg-neutral-900 text-white text-[11px] uppercase tracking-widest font-semibold hover:bg-neutral-700">Редактировать профиль</button>
+          </div>
+          <div id="profile-edit-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label class="text-sm">
               <span class="block text-neutral-500 mb-2">ФИО</span>
               <input id="profile-full-name" type="text" placeholder="Иванов Иван Иванович" class="w-full px-4 py-3 rounded-xl border-2 bg-white outline-none transition-colors">
             </label>
             <label class="text-sm">
-              <span class="block text-neutral-500 mb-2">Телефон (E.164)</span>
+              <span class="block text-neutral-500 mb-2">Телефон</span>
               <input id="profile-phone" type="tel" placeholder="+79991234567" class="w-full px-4 py-3 rounded-xl border-2 bg-white outline-none transition-colors">
             </label>
           </div>
-          <div class="mt-4 flex flex-wrap items-center gap-3">
+          <div id="profile-actions" class="mt-4 flex flex-wrap items-center gap-3">
             <button id="save-profile-btn" class="px-5 py-3 rounded-full bg-neutral-900 text-white text-xs uppercase tracking-widest font-semibold hover:bg-neutral-700">Сохранить профиль</button>
-            <p class="text-xs text-neutral-500">Если профиль заполнен валидно, поля становятся зелёными и напоминания отключаются.</p>
           </div>
         </article>
 
@@ -96,16 +109,16 @@
               <p id="stat-level" class="text-2xl font-light">-</p>
             </div>
             <div>
+              <p class="text-xs uppercase tracking-widest text-neutral-400">Цель</p>
+              <p id="stat-goal" class="text-2xl font-light">-</p>
+            </div>
+            <div>
               <p class="text-xs uppercase tracking-widest text-neutral-400">Остаток стоимости</p>
               <p id="stat-remaining" class="text-2xl font-light">-</p>
             </div>
             <div>
               <p class="text-xs uppercase tracking-widest text-neutral-400">Финишная дата</p>
               <p id="stat-end-date" class="text-xl font-light">-</p>
-            </div>
-            <div>
-              <p class="text-xs uppercase tracking-widest text-neutral-400">Перестроений сегодня (МСК)</p>
-              <p id="stat-replan" class="text-xl font-light">0 / 5</p>
             </div>
           </div>
         </article>
@@ -114,34 +127,39 @@
       <section id="goal-section" class="bg-white rounded-3xl p-6 shadow-xl border border-white/70 mb-8">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
           <h2 class="text-2xl font-light tracking-tight">Цель и параметры обучения</h2>
-          <button id="scroll-calendar-btn" class="text-xs uppercase tracking-widest font-semibold px-3 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200">К календарю</button>
+          <div class="flex items-center gap-2">
+            <button id="goal-toggle-btn" class="hidden text-xs uppercase tracking-widest font-semibold px-3 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200">Изменить параметры</button>
+            <button id="scroll-calendar-btn" class="text-xs uppercase tracking-widest font-semibold px-3 py-2 rounded-full bg-neutral-100 hover:bg-neutral-200">К календарю</button>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <label class="text-sm">
-            <span class="block text-neutral-500 mb-2">Целевой уровень</span>
-            <select id="goal-target-level" class="w-full px-4 py-3 rounded-xl border border-neutral-300 bg-white outline-none">
-              <option value="A1">A1</option>
-              <option value="A2">A2</option>
-              <option value="B1">B1</option>
-              <option value="B2">B2</option>
-              <option value="C1">C1</option>
-              <option value="C2">C2</option>
-            </select>
-          </label>
-          <label class="text-sm">
-            <span class="block text-neutral-500 mb-2">Уроков в неделю</span>
-            <input id="goal-lessons-per-week" type="number" min="1" max="7" value="3" class="w-full px-4 py-3 rounded-xl border border-neutral-300 bg-white outline-none">
-          </label>
-          <div class="text-sm">
-            <span class="block text-neutral-500 mb-2">Дни недели</span>
-            <div id="goal-days" class="grid grid-cols-4 gap-2 text-xs"></div>
+        <div id="goal-config-wrap">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <label class="text-sm">
+              <span class="block text-neutral-500 mb-2">Целевой уровень</span>
+              <select id="goal-target-level" class="w-full px-4 py-3 rounded-xl border border-neutral-300 bg-neutral-50 outline-none focus:ring-2 focus:ring-[#215fc3]/30 focus:border-[#215fc3]">
+                <option value="A1">A1</option>
+                <option value="A2">A2</option>
+                <option value="B1">B1</option>
+                <option value="B2">B2</option>
+                <option value="C1">C1</option>
+                <option value="C2">C2</option>
+              </select>
+            </label>
+            <label class="text-sm">
+              <span class="block text-neutral-500 mb-2">Уроков в неделю</span>
+              <input id="goal-lessons-per-week" type="number" min="1" max="7" value="3" class="w-full px-4 py-3 rounded-xl border border-neutral-300 bg-white outline-none">
+            </label>
+            <div class="text-sm">
+              <span class="block text-neutral-500 mb-2">Дни недели</span>
+              <div id="goal-days" class="grid grid-cols-4 gap-2 text-xs"></div>
+            </div>
           </div>
         </div>
 
         <div class="flex flex-wrap gap-3">
           <button id="create-plan-btn" class="px-5 py-3 rounded-full bg-[#215fc3] text-white text-xs uppercase tracking-widest font-semibold hover:bg-[#1a4da1]">Создать цель и план</button>
-          <button id="recalc-plan-btn" class="px-5 py-3 rounded-full bg-[#f19737] text-neutral-900 text-xs uppercase tracking-widest font-semibold hover:bg-[#e08c33]">Перестроить план</button>
+          <button id="recalc-plan-btn" class="hidden px-5 py-3 rounded-full bg-[#f19737] text-neutral-900 text-xs uppercase tracking-widest font-semibold hover:bg-[#e08c33]">Перестроить план</button>
           <button id="confirm-plan-btn" class="hidden px-5 py-3 rounded-full bg-neutral-900 text-white text-xs uppercase tracking-widest font-semibold hover:bg-neutral-700">Подтвердить новый план</button>
         </div>
 
@@ -152,12 +170,18 @@
         <article id="calendar-section" class="bg-white rounded-3xl p-6 shadow-xl border border-white/70 xl:col-span-2">
           <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 class="text-2xl font-light tracking-tight">Интерактивный календарь</h2>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="flex items-center gap-2">
+                <button id="calendar-prev-btn" class="px-3 py-2 rounded-full text-xs uppercase tracking-widest font-semibold bg-neutral-100 text-neutral-700 hover:bg-neutral-200">←</button>
+                <p id="calendar-title" class="text-sm text-neutral-600 min-w-[180px] text-center"></p>
+                <button id="calendar-next-btn" class="px-3 py-2 rounded-full text-xs uppercase tracking-widest font-semibold bg-neutral-100 text-neutral-700 hover:bg-neutral-200">→</button>
+              </div>
               <button data-calendar="month" class="calendar-mode-btn px-3 py-2 rounded-full text-xs uppercase tracking-widest font-semibold bg-neutral-900 text-white">Месяц</button>
               <button data-calendar="week" class="calendar-mode-btn px-3 py-2 rounded-full text-xs uppercase tracking-widest font-semibold bg-neutral-100 text-neutral-700">Неделя</button>
             </div>
           </div>
           <div id="calendar-view"></div>
+          <div id="lesson-detail" class="mt-4 hidden rounded-2xl border border-neutral-200 bg-neutral-50 p-4"></div>
         </article>
 
         <article class="bg-neutral-900 text-white rounded-3xl p-6 shadow-2xl border border-white/10">
@@ -225,6 +249,11 @@
     let allResults = [];
     let calendarMode = 'month';
     let activeDraftId = null;
+    let calendarCursorDate = null;
+    let calendarLessonsIndex = new Map();
+    let selectedLessonKey = null;
+    let profileEditMode = false;
+    let goalConfigCollapsed = false;
 
     function showSection(sectionId) {
       ['auth-section', 'dashboard-section'].forEach((id) => {
@@ -258,6 +287,49 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function parseLessonDescription(description) {
+      const lines = String(description || '')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      const result = {
+        grammar: '',
+        topic: '',
+        vocabulary: '',
+        goals: '',
+        duration: '',
+        other: [],
+      };
+
+      for (const line of lines) {
+        const match = line.match(/^([A-Za-zА-Яа-яЁё\s]+):\s*(.+)$/);
+        if (!match) {
+          result.other.push(line);
+          continue;
+        }
+
+        const key = match[1].toLowerCase().trim();
+        const value = match[2].trim();
+        if (!value) continue;
+
+        if (key.includes('grammar') || key.includes('граммат')) result.grammar = value;
+        else if (key.includes('topic') || key.includes('тема')) result.topic = value;
+        else if (key.includes('vocabulary') || key.includes('лексик')) result.vocabulary = value;
+        else if (key.includes('goals') || key.includes('цель')) result.goals = value;
+        else if (key.includes('duration') || key.includes('длитель')) result.duration = value;
+        else result.other.push(`${match[1]}: ${value}`);
+      }
+
+      return result;
+    }
+
+    function formatLessonSummary(lesson) {
+      const parsed = parseLessonDescription(lesson?.description || '');
+      const topicLine = parsed.topic || parsed.grammar || parsed.goals || parsed.other[0] || 'Практика навыков для текущего уровня.';
+      return escapeHTML(topicLine);
     }
 
     async function callEdge(name, payload = null, method = 'POST') {
@@ -334,6 +406,11 @@
       const phoneInput = document.getElementById('profile-phone');
       const status = document.getElementById('profile-status');
       const reminder = document.getElementById('profile-reminder');
+      const profileEditForm = document.getElementById('profile-edit-form');
+      const profileActions = document.getElementById('profile-actions');
+      const profileReadCard = document.getElementById('profile-read-card');
+      const cardFullName = document.getElementById('profile-card-full-name');
+      const cardPhone = document.getElementById('profile-card-phone');
 
       fullNameInput.value = profile?.full_name || '';
       phoneInput.value = profile?.phone_e164 || '';
@@ -343,15 +420,27 @@
       if (completed) {
         status.textContent = 'Заполнен';
         status.className = 'text-xs uppercase tracking-widest px-3 py-1 rounded-full bg-green-100 text-green-700';
-        fullNameInput.className = 'w-full px-4 py-3 rounded-xl border-2 bg-white outline-none transition-colors border-green-400';
-        phoneInput.className = 'w-full px-4 py-3 rounded-xl border-2 bg-white outline-none transition-colors border-green-400';
+        fullNameInput.className = 'w-full px-4 py-3 rounded-xl border-2 bg-white outline-none transition-colors border-neutral-300';
+        phoneInput.className = 'w-full px-4 py-3 rounded-xl border-2 bg-white outline-none transition-colors border-neutral-300';
         reminder.classList.add('hidden');
+        cardFullName.textContent = profile?.full_name || '-';
+        cardPhone.textContent = profile?.phone_e164 || '-';
       } else {
         status.textContent = 'Незаполнен';
         status.className = 'text-xs uppercase tracking-widest px-3 py-1 rounded-full bg-red-100 text-red-700';
         fullNameInput.className = 'w-full px-4 py-3 rounded-xl border-2 bg-white outline-none transition-colors border-red-400';
         phoneInput.className = 'w-full px-4 py-3 rounded-xl border-2 bg-white outline-none transition-colors border-red-400';
         reminder.classList.remove('hidden');
+      }
+
+      if (completed && !profileEditMode) {
+        profileReadCard.classList.remove('hidden');
+        profileEditForm.classList.add('hidden');
+        profileActions.classList.add('hidden');
+      } else {
+        profileReadCard.classList.add('hidden');
+        profileEditForm.classList.remove('hidden');
+        profileActions.classList.remove('hidden');
       }
     }
 
@@ -361,9 +450,9 @@
       const draft = dashboard?.plan?.drafts?.[0];
 
       document.getElementById('stat-level').textContent = latest?.level || '-';
+      document.getElementById('stat-goal').textContent = dashboard?.goal?.target_level || '-';
       document.getElementById('stat-remaining').textContent = activePlan ? formatMoney(activePlan.remaining_cost) : '-';
       document.getElementById('stat-end-date').textContent = activePlan ? formatDate(activePlan.end_date) : '-';
-      document.getElementById('stat-replan').textContent = `${dashboard?.replan_usage?.used || 0} / 5`;
 
       if (draft?.id) {
         activeDraftId = draft.id;
@@ -391,8 +480,30 @@
         document.getElementById('goal-target-level').value = goal.target_level || 'B1';
         document.getElementById('goal-lessons-per-week').value = goal.lessons_per_week || 3;
         renderDayCheckboxes(Array.isArray(goal.preferred_days) ? goal.preferred_days.map(Number) : [1, 3, 5]);
+        document.getElementById('create-plan-btn').classList.add('hidden');
+        document.getElementById('recalc-plan-btn').classList.remove('hidden');
+        document.getElementById('goal-toggle-btn').classList.remove('hidden');
+        setGoalConfigCollapsed(true);
       } else {
         renderDayCheckboxes([1, 3, 5]);
+        document.getElementById('create-plan-btn').classList.remove('hidden');
+        document.getElementById('recalc-plan-btn').classList.add('hidden');
+        document.getElementById('goal-toggle-btn').classList.add('hidden');
+        setGoalConfigCollapsed(false);
+      }
+    }
+
+    function setGoalConfigCollapsed(collapsed) {
+      goalConfigCollapsed = Boolean(collapsed);
+      const configWrap = document.getElementById('goal-config-wrap');
+      const toggleBtn = document.getElementById('goal-toggle-btn');
+
+      if (goalConfigCollapsed) {
+        configWrap.classList.add('hidden');
+        toggleBtn.textContent = 'Показать параметры';
+      } else {
+        configWrap.classList.remove('hidden');
+        toggleBtn.textContent = 'Свернуть параметры';
       }
     }
 
@@ -503,97 +614,214 @@
     function renderCalendar() {
       const lessons = dashboard?.plan?.lessons || [];
       const container = document.getElementById('calendar-view');
+      const title = document.getElementById('calendar-title');
+      const detail = document.getElementById('lesson-detail');
       container.innerHTML = '';
+      calendarLessonsIndex = new Map();
 
       if (!lessons.length) {
+        title.textContent = '';
+        detail.classList.add('hidden');
         container.innerHTML = '<p class="text-neutral-500">План пока не построен. Создайте цель обучения.</p>';
         return;
       }
 
+      if (!calendarCursorDate) {
+        calendarCursorDate = new Date(`${lessons[0].lesson_date}T00:00:00.000Z`);
+      }
+
+      const byDate = new Map();
+      let previousLevel = null;
+      lessons.forEach((lesson, idx) => {
+        const key = String(lesson.id || `${lesson.lesson_date}-${lesson.lesson_index || idx + 1}`);
+        const lessonWithMeta = {
+          ...lesson,
+          _key: key,
+          _is_level_milestone: idx === 0 || String(lesson.level || '') !== String(previousLevel || ''),
+        };
+        calendarLessonsIndex.set(key, lessonWithMeta);
+        if (!byDate.has(lesson.lesson_date)) byDate.set(lesson.lesson_date, []);
+        byDate.get(lesson.lesson_date).push(lessonWithMeta);
+        previousLevel = lesson.level || previousLevel;
+      });
+
+      if (!selectedLessonKey || !calendarLessonsIndex.has(selectedLessonKey)) {
+        selectedLessonKey = String(lessons[0].id || `${lessons[0].lesson_date}-${lessons[0].lesson_index || 1}`);
+      }
+
       if (calendarMode === 'week') {
-        const row = document.createElement('div');
-        row.className = 'space-y-3';
-        lessons.slice(0, 14).forEach((lesson) => {
-          const lessonLevel = escapeHTML(lesson.level || '-');
-          const lessonTitle = escapeHTML(lesson.title || '');
-          const lessonDescription = escapeHTML(lesson.description || '');
-          const priorityNote = escapeHTML(lesson.priority_note || '');
-          const item = document.createElement('div');
-          item.className = `p-3 rounded-xl border ${lesson.priority_note ? 'border-[#f19737] bg-[#fff7ed]' : 'border-neutral-200 bg-neutral-50'}`;
-          item.innerHTML = `
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <p class="font-medium">${escapeHTML(formatDate(lesson.lesson_date))} • ${lessonLevel}</p>
-              <div class="flex gap-1">
-                ${lesson.is_checkpoint ? '<span class="px-2 py-1 rounded-full bg-[#215fc3]/10 text-[#215fc3] text-[10px] uppercase tracking-widest">Ретест</span>' : ''}
-                ${lesson.is_final_test ? '<span class="px-2 py-1 rounded-full bg-[#f19737]/20 text-[#8a4f2d] text-[10px] uppercase tracking-widest">Финал</span>' : ''}
-              </div>
-            </div>
-            <p class="text-sm mt-1">${lessonTitle}</p>
-            <p class="text-xs text-neutral-600 mt-1">${lessonDescription}</p>
-            ${lesson.priority_note ? `<p class="text-xs mt-2 text-[#8a4f2d]">Особое внимание: ${priorityNote}</p>` : ''}
-          `;
-          row.appendChild(item);
+        const cursor = new Date(calendarCursorDate.getTime());
+        const day = cursor.getUTCDay() || 7;
+        cursor.setUTCDate(cursor.getUTCDate() - day + 1);
+        const weekStart = new Date(cursor.getTime());
+        const weekEnd = new Date(cursor.getTime());
+        weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+        title.textContent = `${formatDate(weekStart.toISOString().slice(0, 10))} - ${formatDate(weekEnd.toISOString().slice(0, 10))}`;
+
+        const weekHeader = document.createElement('div');
+        weekHeader.className = 'grid grid-cols-7 gap-2 mb-2';
+        WEEK_DAYS.forEach((dayLabel) => {
+          const el = document.createElement('div');
+          el.className = 'text-[10px] uppercase tracking-widest text-neutral-500 text-center';
+          el.textContent = dayLabel.label;
+          weekHeader.appendChild(el);
         });
-        container.appendChild(row);
+        container.appendChild(weekHeader);
+
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-1 md:grid-cols-7 gap-2';
+
+        for (let i = 0; i < 7; i += 1) {
+          const date = new Date(weekStart.getTime());
+          date.setUTCDate(weekStart.getUTCDate() + i);
+          const iso = date.toISOString().slice(0, 10);
+          const dayLessons = byDate.get(iso) || [];
+          const hasMilestone = dayLessons.some((item) => item._is_level_milestone);
+          const dayCell = document.createElement('div');
+          dayCell.className = `calendar-cell rounded-xl border p-2 overflow-hidden ${dayLessons.length ? 'bg-[#eff6ff]' : 'bg-neutral-50'} ${hasMilestone ? 'border-[#f97316] border-2' : dayLessons.length ? 'border-[#215fc3]/30' : 'border-neutral-200'}`;
+          const isToday = new Date().toISOString().slice(0, 10) === iso;
+          dayCell.innerHTML = `
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-semibold ${isToday ? 'text-[#f19737]' : 'text-neutral-700'}">${date.getUTCDate()}</span>
+              ${isToday ? '<span class="text-[9px] uppercase tracking-widest text-[#f19737]">Мы сейчас тут</span>' : ''}
+            </div>
+            <div class="space-y-1"></div>
+          `;
+
+          const lessonsBox = dayCell.querySelector('div.space-y-1');
+          dayLessons.slice(0, 4).forEach((lesson) => {
+            const badge = lesson._is_level_milestone ? ' bg-[#f97316] text-white' : lesson.is_checkpoint ? ' bg-[#215fc3] text-white' : ' bg-white text-neutral-700';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `lesson-pill w-full text-left text-[10px] rounded px-1 py-1${badge}`;
+            btn.setAttribute('data-lesson-key', lesson._key);
+            btn.textContent = lesson.title || 'Урок';
+            lessonsBox.appendChild(btn);
+          });
+
+          if (dayLessons.length > 4) {
+            const extra = document.createElement('div');
+            extra.className = 'text-[10px] text-neutral-500';
+            extra.textContent = `+${dayLessons.length - 4} ещё`;
+            lessonsBox.appendChild(extra);
+          }
+
+          grid.appendChild(dayCell);
+        }
+
+        container.appendChild(grid);
+      } else {
+        const cursorYear = calendarCursorDate.getUTCFullYear();
+        const cursorMonth = calendarCursorDate.getUTCMonth();
+        const monthStart = new Date(Date.UTC(cursorYear, cursorMonth, 1));
+        const monthEnd = new Date(Date.UTC(cursorYear, cursorMonth + 1, 0));
+        const startOffset = (monthStart.getUTCDay() + 6) % 7;
+
+        title.textContent = monthStart.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+        const weekHeader = document.createElement('div');
+        weekHeader.className = 'grid grid-cols-7 gap-2 mb-2';
+        WEEK_DAYS.forEach((dayLabel) => {
+          const el = document.createElement('div');
+          el.className = 'text-[10px] uppercase tracking-widest text-neutral-500 text-center';
+          el.textContent = dayLabel.label;
+          weekHeader.appendChild(el);
+        });
+        container.appendChild(weekHeader);
+
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-7 gap-2';
+
+        for (let i = 0; i < startOffset; i += 1) {
+          const blank = document.createElement('div');
+          blank.className = 'calendar-cell rounded-xl bg-neutral-50 border border-neutral-100';
+          grid.appendChild(blank);
+        }
+
+        for (let day = 1; day <= monthEnd.getUTCDate(); day += 1) {
+          const date = new Date(Date.UTC(cursorYear, cursorMonth, day));
+          const iso = date.toISOString().slice(0, 10);
+          const dayLessons = byDate.get(iso) || [];
+          const hasMilestone = dayLessons.some((item) => item._is_level_milestone);
+          const cell = document.createElement('div');
+          cell.className = `calendar-cell rounded-xl border p-2 overflow-hidden ${dayLessons.length ? 'bg-[#eff6ff]' : 'bg-neutral-50'} ${hasMilestone ? 'border-[#f97316] border-2' : dayLessons.length ? 'border-[#215fc3]/30' : 'border-neutral-200'}`;
+          const isToday = new Date().toISOString().slice(0, 10) === iso;
+          cell.innerHTML = `
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-semibold ${isToday ? 'text-[#f19737]' : 'text-neutral-700'}">${day}</span>
+              ${isToday ? '<span class="text-[9px] uppercase tracking-widest text-[#f19737]">Мы сейчас тут</span>' : ''}
+            </div>
+            <div class="space-y-1"></div>
+          `;
+
+          const lessonsBox = cell.querySelector('div.space-y-1');
+          dayLessons.slice(0, 3).forEach((lesson) => {
+            const badge = lesson._is_level_milestone ? ' bg-[#f97316] text-white' : lesson.is_checkpoint ? ' bg-[#215fc3] text-white' : ' bg-white text-neutral-700';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `lesson-pill w-full text-left text-[10px] rounded px-1 py-1${badge}`;
+            btn.setAttribute('data-lesson-key', lesson._key);
+            btn.textContent = lesson.title || 'Урок';
+            lessonsBox.appendChild(btn);
+          });
+
+          if (dayLessons.length > 3) {
+            const extra = document.createElement('div');
+            extra.className = 'text-[10px] text-neutral-500';
+            extra.textContent = `+${dayLessons.length - 3} ещё`;
+            lessonsBox.appendChild(extra);
+          }
+
+          grid.appendChild(cell);
+        }
+
+        container.appendChild(grid);
+      }
+
+      container.querySelectorAll('[data-lesson-key]').forEach((el) => {
+        el.addEventListener('click', () => {
+          selectedLessonKey = String(el.getAttribute('data-lesson-key') || '');
+          renderLessonDetail();
+        });
+      });
+
+      renderLessonDetail();
+    }
+
+    function renderLessonDetail() {
+      const detail = document.getElementById('lesson-detail');
+      const selectedLesson = selectedLessonKey ? calendarLessonsIndex.get(selectedLessonKey) : null;
+      if (!selectedLesson) {
+        detail.classList.add('hidden');
         return;
       }
 
-      const firstDate = new Date(lessons[0].lesson_date + 'T00:00:00');
-      const monthStart = new Date(firstDate.getFullYear(), firstDate.getMonth(), 1);
-      const monthEnd = new Date(firstDate.getFullYear(), firstDate.getMonth() + 1, 0);
-      const startOffset = (monthStart.getDay() + 6) % 7;
+      const parsed = parseLessonDescription(selectedLesson.description || '');
+      const milestone = selectedLesson._is_level_milestone ? `Переход на уровень ${escapeHTML(selectedLesson.level || '-')}` : '';
+      const summary = formatLessonSummary(selectedLesson);
 
-      const map = new Map();
-      lessons.forEach((lesson) => {
-        if (!map.has(lesson.lesson_date)) map.set(lesson.lesson_date, []);
-        map.get(lesson.lesson_date).push(lesson);
-      });
-
-      const title = document.createElement('p');
-      title.className = 'text-sm text-neutral-500 mb-3';
-      title.textContent = monthStart.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
-      container.appendChild(title);
-
-      const weekHeader = document.createElement('div');
-      weekHeader.className = 'grid grid-cols-7 gap-2 mb-2';
-      WEEK_DAYS.forEach((day) => {
-        const el = document.createElement('div');
-        el.className = 'text-[10px] uppercase tracking-widest text-neutral-500 text-center';
-        el.textContent = day.label;
-        weekHeader.appendChild(el);
-      });
-      container.appendChild(weekHeader);
-
-      const grid = document.createElement('div');
-      grid.className = 'grid grid-cols-7 gap-2';
-
-      for (let i = 0; i < startOffset; i += 1) {
-        const blank = document.createElement('div');
-        blank.className = 'calendar-cell rounded-xl bg-neutral-50 border border-neutral-100';
-        grid.appendChild(blank);
-      }
-
-      for (let day = 1; day <= monthEnd.getDate(); day += 1) {
-        const date = new Date(firstDate.getFullYear(), firstDate.getMonth(), day);
-        const iso = date.toISOString().slice(0, 10);
-        const dayLessons = map.get(iso) || [];
-        const cell = document.createElement('div');
-        cell.className = `calendar-cell rounded-xl border p-2 overflow-hidden ${dayLessons.length ? 'border-[#215fc3]/30 bg-[#eff6ff]' : 'border-neutral-200 bg-neutral-50'}`;
-        const isToday = new Date().toISOString().slice(0, 10) === iso;
-        cell.innerHTML = `
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-xs font-semibold ${isToday ? 'text-[#f19737]' : 'text-neutral-700'}">${day}</span>
-            ${isToday ? '<span class="text-[9px] uppercase tracking-widest text-[#f19737]">Мы сейчас тут</span>' : ''}
+      detail.classList.remove('hidden');
+      detail.innerHTML = `
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
+          <div>
+            <p class="text-xs uppercase tracking-widest text-neutral-500">${escapeHTML(formatDate(selectedLesson.lesson_date))} • ${escapeHTML(selectedLesson.level || '-')}</p>
+            <h3 class="text-lg font-medium">${escapeHTML(selectedLesson.title || 'Урок')}</h3>
           </div>
-          <div class="space-y-1">
-            ${dayLessons.slice(0, 2).map((lesson) => `<div class="text-[10px] rounded px-1 py-0.5 ${lesson.is_checkpoint ? 'bg-[#215fc3] text-white' : 'bg-white text-neutral-700'}">${escapeHTML(lesson.title || '')}</div>`).join('')}
-            ${dayLessons.length > 2 ? `<div class="text-[10px] text-neutral-500">+${dayLessons.length - 2} ещё</div>` : ''}
+          <div class="flex flex-wrap gap-1">
+            ${milestone ? `<span class="px-2 py-1 rounded-full text-[10px] uppercase tracking-widest bg-[#f97316] text-white">${milestone}</span>` : ''}
+            ${selectedLesson.is_checkpoint ? '<span class="px-2 py-1 rounded-full text-[10px] uppercase tracking-widest bg-[#215fc3] text-white">Ретест</span>' : ''}
+            ${selectedLesson.is_final_test ? '<span class="px-2 py-1 rounded-full text-[10px] uppercase tracking-widest bg-[#f19737] text-neutral-900">Финал</span>' : ''}
           </div>
-        `;
-        grid.appendChild(cell);
-      }
-
-      container.appendChild(grid);
+        </div>
+        <p class="text-sm text-neutral-700 mb-3">${summary}</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          ${parsed.topic ? `<div class="rounded-xl bg-white border border-neutral-200 p-3"><p class="text-[11px] uppercase tracking-widest text-neutral-500 mb-1">Тема урока</p><p>${escapeHTML(parsed.topic)}</p></div>` : ''}
+          ${parsed.grammar ? `<div class="rounded-xl bg-white border border-neutral-200 p-3"><p class="text-[11px] uppercase tracking-widest text-neutral-500 mb-1">Грамматика</p><p>${escapeHTML(parsed.grammar)}</p></div>` : ''}
+          ${parsed.vocabulary ? `<div class="rounded-xl bg-white border border-neutral-200 p-3"><p class="text-[11px] uppercase tracking-widest text-neutral-500 mb-1">Лексика</p><p>${escapeHTML(parsed.vocabulary)}</p></div>` : ''}
+          ${parsed.goals ? `<div class="rounded-xl bg-white border border-neutral-200 p-3"><p class="text-[11px] uppercase tracking-widest text-neutral-500 mb-1">Результат урока</p><p>${escapeHTML(parsed.goals)}</p></div>` : ''}
+        </div>
+        ${selectedLesson.priority_note ? `<div class="mt-3 rounded-xl border border-[#f19737] bg-[#fff7ed] p-3 text-sm text-[#8a4f2d]"><strong>Особо важно:</strong> ${escapeHTML(selectedLesson.priority_note)}</div>` : ''}
+      `;
     }
 
     async function loadResultsHistory() {
@@ -633,6 +861,7 @@
         phone_e164: normalizedPhone,
       });
 
+      profileEditMode = false;
       await loadDashboard();
     }
 
@@ -654,6 +883,7 @@
       });
 
       await loadDashboard();
+      setGoalConfigCollapsed(true);
     }
 
     async function recalcGoal() {
@@ -673,6 +903,7 @@
       });
 
       await loadDashboard();
+      setGoalConfigCollapsed(true);
     }
 
     async function confirmDraft() {
@@ -689,10 +920,23 @@
     }
 
     async function analyzeMistakes() {
+      const fallbackAttempt = allResults.find((item) => item.attempt_id)?.attempt_id || null;
       await callEdge('analyze-attempt-mistakes', {
-        attempt_id: dashboard?.latest_test_result?.attempt_id || null,
+        attempt_id: dashboard?.latest_test_result?.attempt_id || fallbackAttempt,
       });
       await loadDashboard();
+    }
+
+    function shiftCalendarCursor(direction) {
+      if (!calendarCursorDate) return;
+      const updated = new Date(calendarCursorDate.getTime());
+      if (calendarMode === 'week') {
+        updated.setUTCDate(updated.getUTCDate() + (direction === 'next' ? 7 : -7));
+      } else {
+        updated.setUTCMonth(updated.getUTCMonth() + (direction === 'next' ? 1 : -1));
+      }
+      calendarCursorDate = updated;
+      renderCalendar();
     }
 
     function openDogPanel() {
@@ -769,6 +1013,15 @@
       document.getElementById('recalc-plan-btn').addEventListener('click', recalcGoal);
       document.getElementById('confirm-plan-btn').addEventListener('click', confirmDraft);
       document.getElementById('analyze-btn').addEventListener('click', analyzeMistakes);
+      document.getElementById('edit-profile-btn').addEventListener('click', () => {
+        profileEditMode = true;
+        applyProfileState(dashboard?.profile || {});
+      });
+      document.getElementById('goal-toggle-btn').addEventListener('click', () => {
+        setGoalConfigCollapsed(!goalConfigCollapsed);
+      });
+      document.getElementById('calendar-prev-btn').addEventListener('click', () => shiftCalendarCursor('prev'));
+      document.getElementById('calendar-next-btn').addEventListener('click', () => shiftCalendarCursor('next'));
 
       document.querySelectorAll('.calendar-mode-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
