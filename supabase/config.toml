@@ -5,3 +5,42 @@ verify_jwt = false
 
 [functions.get-test-questions]
 verify_jwt = false
+
+[functions.get-test-catalog]
+verify_jwt = false
+
+[functions.upsert-student-profile]
+verify_jwt = false
+
+[functions.create-goal-and-plan]
+verify_jwt = false
+
+[functions.recalculate-plan]
+verify_jwt = false
+
+[functions.confirm-plan-version]
+verify_jwt = false
+
+[functions.get-student-dashboard]
+verify_jwt = false
+
+[functions.analyze-attempt-mistakes]
+verify_jwt = false
+
+[functions.sync-attendance-airtable]
+verify_jwt = false
+
+[functions.get-admin-dashboard]
+verify_jwt = false
+
+[functions.get-attempt-review]
+verify_jwt = false
+
+[functions.admin-update-lessons]
+verify_jwt = false
+
+[functions.admin-toggle-b1-plus]
+verify_jwt = false
+
+[functions.issue-certificate]
+verify_jwt = false

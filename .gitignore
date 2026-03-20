@@ -3,3 +3,5 @@ node_modules/
 test-results/
 playwright-report/
 .instructions/*.json
+.DS_Store
+supabase/.DS_Store

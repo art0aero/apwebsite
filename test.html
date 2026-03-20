@@ -74,8 +74,8 @@
             <a href="results.html" id="results-link" class="hidden pointer-events-auto uppercase hover:scale-105 transition-all duration-300 inline-block text-xs md:text-sm font-semibold text-neutral-700 tracking-widest bg-white/60 backdrop-blur-md rounded-full pt-2 md:pt-3 pr-4 md:pr-6 pb-2 md:pb-3 pl-4 md:pl-6 shadow-lg">
                 Результаты
             </a>
-            <a href="#" onclick="goToHome(); return false;" class="pointer-events-auto uppercase hover:scale-105 transition-all duration-300 inline-block text-xs md:text-sm font-semibold text-white tracking-widest bg-[#215fc3] rounded-full pt-2 md:pt-3 pr-4 md:pr-6 pb-2 md:pb-3 pl-4 md:pl-6 shadow-lg">
-                Пройти тест
+            <a href="tests.html" class="pointer-events-auto uppercase hover:scale-105 transition-all duration-300 inline-block text-xs md:text-sm font-semibold text-white tracking-widest bg-[#215fc3] rounded-full pt-2 md:pt-3 pr-4 md:pr-6 pb-2 md:pb-3 pl-4 md:pl-6 shadow-lg">
+                Каталог тестов
             </a>
         </div>
     </nav>
@@ -270,7 +270,15 @@
     <script src="shared/auth.js"></script>
 
     <script>
-        const TEST_QUESTION_COUNT = 50;
+        const DEFAULT_TEST_QUESTION_COUNT = 50;
+        const testQuery = new URLSearchParams(window.location.search);
+        const TEST_CONTEXT = {
+            testId: String(testQuery.get('test_id') || 'english-placement').trim() || 'english-placement',
+            mode: (['placement', 'checkpoint', 'final'].includes(String(testQuery.get('mode') || '').toLowerCase())
+                ? String(testQuery.get('mode')).toLowerCase()
+                : 'placement'),
+            targetLevel: String(testQuery.get('target_level') || '').trim().toUpperCase() || null,
+        };
 
         let authController = null;
         let currentUser = null;
@@ -477,7 +485,12 @@
                     apikey: window.AppAuth.SUPABASE_ANON_KEY,
                     Authorization: `Bearer ${accessToken}`
                 },
-                body: JSON.stringify({ count: TEST_QUESTION_COUNT })
+                body: JSON.stringify({
+                    count: DEFAULT_TEST_QUESTION_COUNT,
+                    test_id: TEST_CONTEXT.testId,
+                    mode: TEST_CONTEXT.mode,
+                    target_level: TEST_CONTEXT.targetLevel,
+                })
             });
 
             const result = await response.json();
@@ -489,8 +502,8 @@
                 ? result.questions.map(normalizeQuestion).filter(Boolean)
                 : [];
 
-            if (normalized.length !== TEST_QUESTION_COUNT) {
-                throw new Error(`Ожидалось ${TEST_QUESTION_COUNT} вопросов, получено ${normalized.length}`);
+            if (normalized.length !== DEFAULT_TEST_QUESTION_COUNT) {
+                throw new Error(`Ожидалось ${DEFAULT_TEST_QUESTION_COUNT} вопросов, получено ${normalized.length}`);
             }
 
             return normalized;
@@ -623,6 +636,9 @@
                     selected_option: userAnswers[idx]
                 })),
                 time_seconds: secondsElapsed,
+                test_id: TEST_CONTEXT.testId,
+                mode: TEST_CONTEXT.mode,
+                target_level: TEST_CONTEXT.targetLevel,
                 client_meta: {
                     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                     user_agent: navigator.userAgent
@@ -699,6 +715,22 @@
                         bar.style.width = bar.getAttribute('data-target');
                     });
                 }, 300);
+
+                try {
+                    localStorage.setItem('lastAttemptId', String(result.attempt_id || ''));
+                    localStorage.setItem('lastTestMode', TEST_CONTEXT.mode);
+                    localStorage.setItem('openGoalAfterTest', TEST_CONTEXT.mode === 'placement' ? '1' : '0');
+                } catch (storageError) {
+                    console.warn('Unable to save post-test flags:', storageError);
+                }
+
+                const redirectUrl = TEST_CONTEXT.mode === 'placement'
+                    ? 'results.html?open_goal=1'
+                    : 'results.html';
+
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 1600);
             } catch (error) {
                 const errorDiv = document.getElementById('auth-error');
                 errorDiv.textContent = error.message || 'Не удалось завершить тест';

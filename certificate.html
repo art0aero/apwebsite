@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>АР | Верификация сертификата</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Montserrat', sans-serif; }</style>
+</head>
+<body class="min-h-screen bg-[#ece4dc] text-neutral-900 flex items-center justify-center p-4">
+  <div class="w-full max-w-xl bg-white rounded-3xl p-8 shadow-2xl border border-white/80">
+    <p class="text-xs uppercase tracking-[0.2em] text-neutral-500 mb-3">Certificate Verify</p>
+    <h1 class="text-3xl md:text-4xl font-light tracking-tight mb-4">Проверка сертификата</h1>
+    <div id="content" class="text-neutral-600">Проверяем токен...</div>
+    <a href="index.html" class="inline-block mt-6 text-xs uppercase tracking-widest font-semibold px-4 py-2 rounded-full bg-neutral-900 text-white">На главную</a>
+  </div>
+
+  <script src="shared/auth.js"></script>
+  <script>
+    async function init() {
+      const token = new URL(window.location.href).searchParams.get('token');
+      const content = document.getElementById('content');
+      if (!token) {
+        content.textContent = 'Токен не передан.';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${window.AppAuth.SUPABASE_URL}/functions/v1/issue-certificate?token=${encodeURIComponent(token)}`, {
+          method: 'GET',
+          headers: {
+            apikey: window.AppAuth.SUPABASE_ANON_KEY,
+          },
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || 'Сертификат не найден');
+        }
+
+        const certificate = result.certificate;
+        content.innerHTML = `
+          <div class="space-y-3">
+            <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200"><b>Тип:</b> ${certificate.certificate_type === 'badge' ? 'Промежуточный бейдж' : 'Финальный сертификат'}</div>
+            <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200"><b>Уровень:</b> ${certificate.level}</div>
+            <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200"><b>Статус:</b> ${certificate.status}</div>
+            <div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200"><b>Дата выдачи:</b> ${new Date(certificate.issued_at).toLocaleString('ru-RU')}</div>
+          </div>
+        `;
+      } catch (error) {
+        content.textContent = error.message || 'Сертификат невалиден';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

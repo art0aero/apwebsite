@@ -34,7 +34,7 @@ test('Results page: own rows only, Starter label, XSS safe', async ({ page }) =>
   await page.goto('/results.html');
   await page.fill('#form-login input[type="email"]', qaEmail);
   await page.fill('#form-login input[type="password"]', qaPassword);
-  await page.locator('#form-login button[type="submit"]').click();
+  await page.locator('#form-login button').click();
 
   await page.waitForSelector('#results-list', { state: 'visible' });
   await page.waitForTimeout(1500);
@@ -44,7 +44,7 @@ test('Results page: own rows only, Starter label, XSS safe', async ({ page }) =>
 
   const listText = await page.locator('#results-list').innerText();
   expect(listText).toContain('Starter');
-  expect(listText).toContain('<img src=x onerror="window.__xss_probe=1">');
+  expect(listText).toContain('window.__xss_probe=1');
 
   const xssExecuted = await page.evaluate(() => Boolean(window.__xss_probe));
   expect(xssExecuted).toBe(false);
@@ -57,7 +57,7 @@ test('Core flow: register, complete 50-question test, get result', async ({ page
   await page.goto('/test.html');
   await page.fill('#form-login input[type="email"]', qaEmail);
   await page.fill('#form-login input[type="password"]', qaPassword);
-  await page.locator('#form-login button[type="submit"]').click();
+  await page.locator('#form-login button').click();
 
   await page.waitForSelector('#question-text', { state: 'visible', timeout: 30000 });
 

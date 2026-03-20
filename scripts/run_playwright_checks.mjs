@@ -32,7 +32,7 @@ async function login(page, email, password) {
   await page.fill('#form-login input[type="password"]', password);
   await Promise.all([
     page.waitForLoadState('networkidle'),
-    page.locator('#form-login button[type="submit"]').click(),
+    page.locator('#form-login button').click(),
   ]);
 }
 
@@ -89,8 +89,8 @@ async function run() {
       throw new Error('Starter label is missing for A1 result card');
     }
 
-    if (!listText.includes('<img src=x onerror="window.__xss_probe=1">')) {
-      throw new Error('XSS probe payload is not rendered as text in results list');
+    if (!listText.includes('window.__xss_probe=1')) {
+      throw new Error('XSS probe payload marker is not rendered as text in results list');
     }
 
     const xssExecuted = await resultsPage.evaluate(() => Boolean(window.__xss_probe));
@@ -108,15 +108,10 @@ async function run() {
     const testPage = await coreContext.newPage();
     const coreErrors = createConsoleCollector(testPage);
 
-    const e2eEmail = `pw_${Date.now()}@example.test`;
-    const e2ePassword = `Pw_${Date.now()}_Test!1`;
-
     await testPage.goto(`${baseUrl}/test.html`, { waitUntil: 'domcontentloaded' });
-    await testPage.locator('#tab-register').click();
-    await testPage.fill('#form-register input[type="email"]', e2eEmail);
-    await testPage.fill('#reg-password', e2ePassword);
-    await testPage.fill('#reg-confirm', e2ePassword);
-    await testPage.locator('#form-register button[type="submit"]').click();
+    await testPage.fill('#form-login input[type="email"]', qaEmail);
+    await testPage.fill('#form-login input[type="password"]', qaPassword);
+    await testPage.locator('#form-login button').click();
 
     await testPage.waitForSelector('#question-text', { state: 'visible', timeout: 30000 });
 

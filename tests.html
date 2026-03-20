@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>АР | Каталог тестов</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Montserrat', sans-serif; }
+  </style>
+</head>
+<body class="min-h-screen bg-[#ece4dc] text-neutral-900">
+  <div class="max-w-6xl mx-auto px-4 md:px-6 py-8">
+    <header class="flex items-center justify-between mb-8">
+      <a href="results.html" class="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-neutral-700 hover:text-neutral-900">
+        <iconify-icon icon="solar:arrow-left-linear" width="18"></iconify-icon>
+        Личный кабинет
+      </a>
+      <button id="logout-btn" class="text-xs md:text-sm font-semibold uppercase tracking-widest bg-white/70 rounded-full px-4 py-2 border border-white/60 hover:bg-white">Выйти</button>
+    </header>
+
+    <section class="mb-8">
+      <p class="text-xs uppercase tracking-[0.2em] text-neutral-500 mb-3">Каталог тестов</p>
+      <h1 class="text-4xl md:text-6xl font-light tracking-tight">Выберите тест</h1>
+      <p class="text-neutral-600 mt-3 max-w-2xl">Сейчас доступен один тест. Далее сюда можно добавлять новые карточки без изменения логики запуска.</p>
+    </section>
+
+    <div id="profile-warning" class="hidden mb-6 p-4 rounded-2xl border border-red-400 bg-red-50 text-red-700 text-sm">
+      Профиль неполный: заполните ФИО и телефон в личном кабинете. Тест можно пройти, но напоминание будет показываться перед каждым запуском.
+    </div>
+
+    <section id="tests-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></section>
+
+    <div id="empty" class="hidden text-center py-16 text-neutral-500">Пока нет активных тестов</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared/auth.js"></script>
+  <script>
+    let authController = null;
+    let dashboardData = null;
+
+    async function callEdge(name, payload = null, method = 'POST') {
+      const token = await authController.getAccessToken();
+      if (!token) throw new Error('Сессия истекла');
+      const url = `${window.AppAuth.SUPABASE_URL}/functions/v1/${name}`;
+      const options = {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: window.AppAuth.SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      if (payload && method !== 'GET') options.body = JSON.stringify(payload);
+      const response = await fetch(url, options);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || `Edge ${name} failed`);
+      return result;
+    }
+
+    function renderTests(tests) {
+      const grid = document.getElementById('tests-grid');
+      const empty = document.getElementById('empty');
+      grid.innerHTML = '';
+
+      if (!tests || !tests.length) {
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+
+      tests.forEach((test) => {
+        const card = document.createElement('article');
+        card.className = 'bg-neutral-900 text-white rounded-3xl p-6 md:p-8 shadow-2xl border border-white/10 relative overflow-hidden';
+        card.innerHTML = `
+          <div class="absolute -top-14 -right-14 w-40 h-40 bg-[#f19737]/30 blur-3xl rounded-full"></div>
+          <div class="relative z-10">
+            <p class="text-xs uppercase tracking-widest text-[#f19737] mb-3">${test.question_count} вопросов • ${test.duration_minutes} минут</p>
+            <h2 class="text-2xl md:text-3xl font-light tracking-tight mb-2">${test.title}</h2>
+            <p class="text-[#fea0da] font-medium mb-4">${test.subtitle}</p>
+            <p class="text-white/80 text-sm mb-8">${test.description}</p>
+            <button class="start-btn inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#215fc3] hover:bg-[#1a4da1] transition-colors text-xs uppercase tracking-widest font-semibold" data-test-id="${test.id}">
+              Пройти тест
+              <iconify-icon icon="solar:arrow-right-linear" width="16"></iconify-icon>
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      grid.querySelectorAll('.start-btn').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          const testId = event.currentTarget.getAttribute('data-test-id');
+          const profileCompleted = Boolean(dashboardData?.profile?.is_completed);
+          if (!profileCompleted) {
+            const proceed = window.confirm('Ваш профиль не заполнен (ФИО и телефон). Хотите всё равно запустить тест?');
+            if (!proceed) return;
+          }
+          window.location.href = `test.html?test_id=${encodeURIComponent(testId)}&mode=placement`;
+        });
+      });
+    }
+
+    async function initPage() {
+      authController = window.AppAuth.createAuthController({
+        redirectPath: '/tests.html',
+        emailRedirectPath: '/tests.html',
+      });
+
+      const user = await authController.init();
+      if (!user) {
+        window.location.href = 'results.html';
+        return;
+      }
+
+      const [catalog, dashboard] = await Promise.all([
+        callEdge('get-test-catalog', null, 'GET'),
+        callEdge('get-student-dashboard'),
+      ]);
+
+      dashboardData = dashboard;
+      if (!dashboard?.profile?.is_completed) {
+        document.getElementById('profile-warning').classList.remove('hidden');
+      }
+
+      renderTests(catalog.tests || []);
+
+      document.getElementById('logout-btn').addEventListener('click', async () => {
+        await authController.signOut();
+        window.location.href = 'results.html';
+      });
+    }
+
+    initPage().catch((error) => {
+      console.error(error);
+      alert(error.message || 'Не удалось загрузить каталог тестов');
+      window.location.href = 'results.html';
+    });
+  </script>
+</body>
+</html>

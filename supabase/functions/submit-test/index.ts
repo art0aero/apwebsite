@@ -9,12 +9,17 @@ type RequestPayload = {
   answers: SubmittedAnswer[];
   time_seconds: number;
   client_meta?: Record<string, unknown>;
+  test_id?: string;
+  mode?: 'placement' | 'checkpoint' | 'final';
+  target_level?: string | null;
 };
 
 type QuestionBankRow = {
   id: number;
   level: (typeof LEVEL_ORDER)[number];
   correct_option: number;
+  question_text: string;
+  options: string[];
 };
 
 const CORS_HEADERS = {
@@ -111,6 +116,21 @@ function calculateResult(answers: SubmittedAnswer[], questionMap: Map<number, Qu
   };
 }
 
+function normalizeLevel(level: string | null | undefined): string {
+  const normalized = String(level || '').trim();
+  if (normalized === 'Below A1' || normalized === 'A0') return 'A1';
+  return normalized || 'A1';
+}
+
+function levelIndex(level: string): number {
+  const idx = LEVEL_ORDER.indexOf(normalizeLevel(level) as (typeof LEVEL_ORDER)[number]);
+  return idx >= 0 ? idx : 0;
+}
+
+function certificateTypeFromMode(mode: string): 'badge' | 'final' {
+  return mode === 'final' ? 'final' : 'badge';
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS });
@@ -179,7 +199,7 @@ Deno.serve(async (req) => {
 
     const { data: questionRowsData, error: questionRowsError } = await adminClient
       .from('question_bank')
-      .select('id,level,correct_option')
+      .select('id,level,correct_option,question_text,options')
       .in('id', uniqueQuestionIds)
       .eq('is_active', true);
 
@@ -198,12 +218,21 @@ Deno.serve(async (req) => {
         id: Number(row.id),
         level: row.level,
         correct_option: Number(row.correct_option),
+        question_text: String((row as { question_text?: string }).question_text || ''),
+        options: Array.isArray((row as { options?: unknown }).options)
+          ? ((row as { options: unknown[] }).options || []).map((item) => String(item))
+          : [],
       });
     }
 
     const timeSeconds = Number(payload.time_seconds || 0);
     const completedAt = new Date().toISOString();
     const result = calculateResult(cleanedAnswers, questionMap);
+    const testId = String(payload.test_id || 'english-placement').trim() || 'english-placement';
+    const requestedMode = String(payload.mode || 'placement').trim().toLowerCase();
+    const mode = ['placement', 'checkpoint', 'final'].includes(requestedMode) ? requestedMode : 'placement';
+    const targetLevel = payload.target_level ? String(payload.target_level).toUpperCase().trim() : null;
+    const attemptId = crypto.randomUUID();
 
     const seenRows = uniqueQuestionIds.map((questionId) => ({
       user_id: user.id,
@@ -220,6 +249,7 @@ Deno.serve(async (req) => {
     }
 
     const { error: insertError } = await adminClient.from('test_results').insert({
+      attempt_id: attemptId,
       user_id: user.id,
       user_email: user.email,
       answers: cleanedAnswers,
@@ -228,6 +258,11 @@ Deno.serve(async (req) => {
       level: result.level,
       level_badge: result.level_badge,
       breakdown: result.breakdown,
+      test_id: testId,
+      mode,
+      target_level: targetLevel,
+      is_checkpoint: mode === 'checkpoint',
+      is_final_test: mode === 'final',
       time_seconds: Number.isFinite(timeSeconds) ? Math.max(0, Math.round(timeSeconds)) : 0,
       completed_at: completedAt,
     });
@@ -236,13 +271,94 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: insertError.message }, 500);
     }
 
+    const attemptItems = cleanedAnswers.map((item) => {
+      const q = questionMap.get(item.question_id);
+      const options = q?.options || [];
+      const selected = Number(item.selected_option);
+      const correct = Number(q?.correct_option ?? -1);
+      return {
+        attempt_id: attemptId,
+        user_id: user.id,
+        test_id: testId,
+        mode,
+        target_level: targetLevel,
+        question_id: item.question_id,
+        question_text: String(q?.question_text || ''),
+        question_level: String(q?.level || ''),
+        selected_option: selected,
+        selected_option_text: options[selected] || '',
+        correct_option: correct,
+        correct_option_text: options[correct] || '',
+        is_correct: selected === correct,
+      };
+    });
+
+    if (attemptItems.length) {
+      const { error: attemptItemsError } = await adminClient.from('attempt_items').insert(attemptItems);
+      if (attemptItemsError) {
+        return jsonResponse({ error: attemptItemsError.message }, 500);
+      }
+    }
+
+    if (mode === 'checkpoint' || mode === 'final') {
+      const target = normalizeLevel(targetLevel || result.level);
+      const achieved = normalizeLevel(result.level);
+      const delta = levelIndex(target) - levelIndex(achieved);
+
+      const { data: activePlan } = await adminClient
+        .from('study_plan_versions')
+        .select('id,end_date')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (activePlan?.id && activePlan.end_date && delta !== 0) {
+        const endDate = new Date(`${activePlan.end_date}T00:00:00.000Z`);
+        if (delta > 0) {
+          endDate.setUTCDate(endDate.getUTCDate() + delta * 14);
+        } else {
+          endDate.setUTCDate(endDate.getUTCDate() + delta * 7);
+        }
+
+        await adminClient
+          .from('study_plan_versions')
+          .update({ end_date: endDate.toISOString().slice(0, 10) })
+          .eq('id', activePlan.id);
+      }
+
+      if (levelIndex(achieved) >= levelIndex(target)) {
+        const verifyToken = crypto.randomUUID().replaceAll('-', '');
+        await adminClient.from('certificates').insert({
+          user_id: user.id,
+          plan_version_id: activePlan?.id || null,
+          level: achieved,
+          certificate_type: certificateTypeFromMode(mode),
+          status: 'issued',
+          verify_token: verifyToken,
+          metadata: {
+            mode,
+            target_level: target,
+            attempt_id: attemptId,
+            score: result.score,
+            issued_by: 'auto_submit_test',
+          },
+        });
+      }
+    }
+
     return jsonResponse({
+      attempt_id: attemptId,
       score: result.score,
       normalized_score: result.normalized_score,
       level: result.level,
       level_badge: result.level_badge,
       breakdown: result.breakdown,
       completed_at: completedAt,
+      test_id: testId,
+      mode,
+      target_level: targetLevel,
     });
   } catch (error) {
     return jsonResponse({ error: error instanceof Error ? error.message : 'Unknown error' }, 500);
