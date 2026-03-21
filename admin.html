@@ -31,7 +31,6 @@
     <section id="auth-section" class="max-w-md mx-auto mt-10">
       <div class="bg-neutral-900 text-white rounded-3xl p-8 shadow-2xl">
         <h2 class="text-2xl font-light mb-4">Вход для методиста</h2>
-        <p class="text-sm text-neutral-300 mb-4">Доступ только для allowlist email + role=methodist/admin.</p>
         <div id="auth-error" class="hidden mb-4 p-3 rounded-lg text-xs uppercase tracking-widest bg-red-500/10 border border-red-500/30 text-red-400"></div>
         <form id="login-form" class="space-y-4">
           <input type="email" required placeholder="Email" class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/15 outline-none focus:border-[#f19737]">
@@ -122,6 +121,7 @@
     let adminData = null;
     let selectedStudent = null;
     let selectedDetails = null;
+    let lessonTemplates = [];
 
     async function callEdge(name, payload = null, method = 'POST') {
       const token = await authController.getAccessToken();
@@ -144,6 +144,15 @@
       const el = document.getElementById('auth-error');
       el.textContent = message;
       el.classList.remove('hidden');
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     function toggleSections(isAdmin) {
@@ -287,20 +296,77 @@
     function renderLessonsForm() {
       const select = document.getElementById('lesson-select');
       select.innerHTML = '';
-      (selectedDetails?.lessons || []).forEach((lesson) => {
-        const option = document.createElement('option');
-        option.value = lesson.id;
-        option.textContent = `#${lesson.lesson_index} ${lesson.lesson_date} • ${lesson.title}`;
-        select.appendChild(option);
-      });
+      const newOption = document.createElement('option');
+      newOption.value = '__new__';
+      newOption.textContent = '+ Новый';
+      select.appendChild(newOption);
 
-      if ((selectedDetails?.lessons || []).length) {
-        fillLessonForm(selectedDetails.lessons[0]);
+      const lessons = selectedDetails?.lessons || [];
+      if (lessons.length) {
+        const currentGroup = document.createElement('optgroup');
+        currentGroup.label = 'Занятия в плане';
+        lessons.forEach((lesson) => {
+          const option = document.createElement('option');
+          option.value = lesson.id;
+          option.textContent = `#${lesson.lesson_index} ${lesson.lesson_date} • ${lesson.title}`;
+          currentGroup.appendChild(option);
+        });
+        select.appendChild(currentGroup);
+      }
+
+      if (lessonTemplates.length) {
+        const templateGroup = document.createElement('optgroup');
+        templateGroup.label = 'Шаблоны программы';
+        lessonTemplates.forEach((template, index) => {
+          const option = document.createElement('option');
+          option.value = `template:${index}`;
+          const path = `${template.path_from || '-'}→${template.path_to || template.level || '-'}`;
+          const trackSuffix = template.track === 'b1_plus' ? ' (B1+)' : '';
+          option.textContent = `${path}${trackSuffix} • ${template.title || 'Новый урок'}`;
+          templateGroup.appendChild(option);
+        });
+        select.appendChild(templateGroup);
+      }
+
+      if (lessons.length) {
+        select.value = lessons[0].id;
+        fillLessonForm(lessons[0]);
+      } else {
+        select.value = '__new__';
+        fillLessonForm(null);
       }
     }
 
+    function resolveTemplateCost(template) {
+      const from = String(template?.path_from || '').toUpperCase();
+      const to = String(template?.path_to || '').toUpperCase();
+      return from === 'C1' && to === 'C2' ? 1650 : 1500;
+    }
+
+    function fillLessonFormFromTemplate(template) {
+      if (!template) {
+        fillLessonForm(null);
+        return;
+      }
+
+      document.getElementById('lesson-date').value = '';
+      document.getElementById('lesson-level').value = String(template.level || template.path_to || '').toUpperCase();
+      document.getElementById('lesson-title').value = template.title || '';
+      document.getElementById('lesson-description').value = template.description || '';
+      document.getElementById('lesson-status').value = 'planned';
+      document.getElementById('lesson-cost').value = resolveTemplateCost(template);
+    }
+
     function fillLessonForm(lesson) {
-      if (!lesson) return;
+      if (!lesson) {
+        document.getElementById('lesson-date').value = '';
+        document.getElementById('lesson-level').value = '';
+        document.getElementById('lesson-title').value = '';
+        document.getElementById('lesson-description').value = '';
+        document.getElementById('lesson-status').value = 'planned';
+        document.getElementById('lesson-cost').value = 1500;
+        return;
+      }
       document.getElementById('lesson-date').value = lesson.lesson_date || '';
       document.getElementById('lesson-level').value = lesson.level || '';
       document.getElementById('lesson-title').value = lesson.title || '';
@@ -322,11 +388,12 @@
 
       container.innerHTML = rows.map((row, index) => `
         <div class="py-2 ${index ? 'border-t border-neutral-200' : ''}">
-          <p class="font-medium mb-1">${row.question_text}</p>
-          <p class="text-xs ${row.is_correct ? 'text-green-700' : 'text-red-700'}">
-            Ответ ученика: ${row.selected_option_text || '-'}
-            ${row.is_correct ? '✓' : ` | Правильный: ${row.correct_option_text || '-'}`}
-          </p>
+          <p class="font-medium mb-1">${escapeHTML(row.question_text || '-')}</p>
+          ${row.is_correct
+            ? `<p class="text-xs text-green-700">Ответ ученика: ${escapeHTML(row.selected_option_text || '-')} ✓</p>`
+            : `<p class="text-xs text-red-700">Ответ ученика: ${escapeHTML(row.selected_option_text || '-')}</p>
+               <p class="text-xs text-neutral-500">Правильный: ${escapeHTML(row.correct_option_text || '-')}</p>`
+          }
         </div>
       `).join('');
     }
@@ -334,7 +401,8 @@
     async function selectStudent(item) {
       selectedStudent = item;
       const detailData = await callEdge('get-admin-dashboard', { student_user_id: item.profile.user_id });
-      selectedDetails = detailData.selected_student || { attempts: [], lessons: [], insights: [] };
+      selectedDetails = detailData.selected_student || { attempts: [], lessons: [], insights: [], curriculum_catalog: [] };
+      lessonTemplates = Array.isArray(selectedDetails.curriculum_catalog) ? selectedDetails.curriculum_catalog : [];
       renderStudents();
       renderSelectedStudent();
     }
@@ -352,6 +420,11 @@
       }
 
       const lessonId = document.getElementById('lesson-select').value;
+      if ((action === 'update' || action === 'delete') && (!lessonId || lessonId === '__new__' || lessonId.startsWith('template:'))) {
+        alert('Для обновления/удаления выберите существующий урок из блока «Занятия в плане».');
+        return;
+      }
+
       const payload = {
         action,
         student_user_id: selectedStudent.profile.user_id,
@@ -375,6 +448,15 @@
       await callEdge('admin-update-lessons', payload);
       await selectStudent(selectedStudent);
       await refreshAdminData();
+    }
+
+    function renderTemplateByIndex(value) {
+      const index = Number(String(value || '').replace('template:', ''));
+      if (!Number.isInteger(index) || index < 0 || index >= lessonTemplates.length) {
+        fillLessonForm(null);
+        return;
+      }
+      fillLessonFormFromTemplate(lessonTemplates[index]);
     }
 
     async function toggleB1Plus() {
@@ -465,8 +547,17 @@
     function bindEvents() {
       document.getElementById('student-search').addEventListener('input', renderStudents);
       document.getElementById('lesson-select').addEventListener('change', (event) => {
-        const lesson = (selectedDetails?.lessons || []).find((item) => item.id === event.target.value);
-        fillLessonForm(lesson);
+        const selectedValue = event.target.value;
+        if (!selectedValue || selectedValue === '__new__') {
+          fillLessonForm(null);
+          return;
+        }
+        if (selectedValue.startsWith('template:')) {
+          renderTemplateByIndex(selectedValue);
+          return;
+        }
+        const lesson = (selectedDetails?.lessons || []).find((item) => item.id === selectedValue);
+        fillLessonForm(lesson || null);
       });
       document.getElementById('lesson-add').addEventListener('click', () => mutateLesson('add'));
       document.getElementById('lesson-update').addEventListener('click', () => mutateLesson('update'));

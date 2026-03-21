@@ -113,6 +113,22 @@
               <p id="stat-goal" class="text-2xl font-light">-</p>
             </div>
             <div>
+              <p class="text-xs uppercase tracking-widest text-neutral-400">Всего занятий до цели</p>
+              <p id="stat-total-lessons" class="text-2xl font-light">-</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-widest text-neutral-400">Пройдено занятий</p>
+              <p id="stat-completed-lessons" class="text-2xl font-light">-</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-widest text-neutral-400">Средняя стоимость занятия</p>
+              <p id="stat-avg-cost" class="text-2xl font-light">-</p>
+            </div>
+            <div>
+              <p class="text-xs uppercase tracking-widest text-neutral-400">Ежемесячный платеж</p>
+              <p id="stat-monthly-payment" class="text-2xl font-light">-</p>
+            </div>
+            <div>
               <p class="text-xs uppercase tracking-widest text-neutral-400">Остаток стоимости</p>
               <p id="stat-remaining" class="text-2xl font-light">-</p>
             </div>
@@ -278,6 +294,17 @@
       const date = new Date(dateString);
       if (Number.isNaN(date.getTime())) return '-';
       return date.toLocaleString('ru-RU');
+    }
+
+    function estimateMonthsLeft(endDateString) {
+      if (!endDateString) return 0;
+      const today = new Date();
+      const end = new Date(`${endDateString}T00:00:00`);
+      if (Number.isNaN(end.getTime())) return 0;
+      const diffMs = end.getTime() - today.getTime();
+      if (diffMs <= 0) return 1;
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      return Math.max(1, Math.ceil(diffDays / 30));
     }
 
     function escapeHTML(value) {
@@ -462,10 +489,30 @@
       const latest = dashboard?.latest_test_result;
       const activePlan = dashboard?.plan?.active;
       const draft = dashboard?.plan?.drafts?.[0];
+      const lessons = Array.isArray(dashboard?.plan?.lessons) ? dashboard.plan.lessons : [];
+      const totalLessons = Number(activePlan?.total_lessons ?? lessons.length ?? 0);
+      const completedLessons = Number(
+        activePlan?.completed_lessons
+        ?? lessons.filter((item) => item.status === 'completed').length
+        ?? 0,
+      );
+      const totalCost = Number(
+        activePlan?.total_cost
+        ?? lessons.reduce((sum, item) => sum + (Number(item.cost) || 0), 0)
+        ?? 0,
+      );
+      const remainingCost = Number(activePlan?.remaining_cost || 0);
+      const avgCost = totalLessons > 0 ? totalCost / totalLessons : 0;
+      const monthsLeft = estimateMonthsLeft(activePlan?.end_date || null);
+      const monthlyPayment = monthsLeft > 0 ? remainingCost / monthsLeft : 0;
 
       document.getElementById('stat-level').textContent = latest?.level || '-';
       document.getElementById('stat-goal').textContent = dashboard?.goal?.target_level || '-';
-      document.getElementById('stat-remaining').textContent = activePlan ? formatMoney(activePlan.remaining_cost) : '-';
+      document.getElementById('stat-total-lessons').textContent = activePlan ? String(totalLessons) : '-';
+      document.getElementById('stat-completed-lessons').textContent = activePlan ? String(completedLessons) : '-';
+      document.getElementById('stat-avg-cost').textContent = activePlan ? formatMoney(avgCost) : '-';
+      document.getElementById('stat-monthly-payment').textContent = activePlan ? formatMoney(monthlyPayment) : '-';
+      document.getElementById('stat-remaining').textContent = activePlan ? formatMoney(remainingCost) : '-';
       document.getElementById('stat-end-date').textContent = activePlan ? formatDate(activePlan.end_date) : '-';
 
       if (draft?.id) {

@@ -66,16 +66,7 @@ function fallbackAnalyze(rows: Array<{ question_text: string; question_level: st
   return { summary, items };
 }
 
-function parseAiJsonContent(raw: unknown): { summary: string; items: InsightItem[] } | null {
-  if (typeof raw !== 'string' || !raw.trim()) return null;
-
-  let parsed: Record<string, unknown>;
-  try {
-    parsed = JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-
+function normalizeInsightObject(parsed: Record<string, unknown>): { summary: string; items: InsightItem[] } {
   const rawItems = Array.isArray(parsed.items) ? parsed.items : [];
   const items: InsightItem[] = rawItems
     .map((item: unknown) => ({
@@ -93,6 +84,109 @@ function parseAiJsonContent(raw: unknown): { summary: string; items: InsightItem
   return {
     summary: String(parsed.summary || '').trim() || 'Персональный разбор сформирован.',
     items,
+  };
+}
+
+function stripMarkdownJsonFence(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('```')) return trimmed;
+  return trimmed
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '')
+    .trim();
+}
+
+function parseAiJsonContent(raw: unknown): { summary: string; items: InsightItem[] } | null {
+  if (!raw) return null;
+
+  if (typeof raw === 'object' && !Array.isArray(raw)) {
+    return normalizeInsightObject(raw as Record<string, unknown>);
+  }
+
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      const parsed = parseAiJsonContent(item);
+      if (parsed && parsed.items.length) return parsed;
+    }
+    return null;
+  }
+
+  if (typeof raw !== 'string') return null;
+  const prepared = stripMarkdownJsonFence(raw);
+  if (!prepared) return null;
+
+  try {
+    const parsed = JSON.parse(prepared) as Record<string, unknown>;
+    return normalizeInsightObject(parsed);
+  } catch {
+    const jsonStart = prepared.indexOf('{');
+    const jsonEnd = prepared.lastIndexOf('}');
+    if (jsonStart >= 0 && jsonEnd > jsonStart) {
+      try {
+        const extracted = prepared.slice(jsonStart, jsonEnd + 1);
+        const parsed = JSON.parse(extracted) as Record<string, unknown>;
+        return normalizeInsightObject(parsed);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
+function extractCandidatePayloads(payload: unknown): unknown[] {
+  const candidates: unknown[] = [payload];
+  const data = payload as Record<string, unknown> | null;
+  if (!data || typeof data !== 'object') return candidates;
+
+  if (data.output_text) candidates.push(data.output_text);
+  if (Array.isArray(data.output)) {
+    for (const outputItem of data.output) {
+      candidates.push(outputItem);
+      const content = (outputItem as { content?: unknown }).content;
+      if (Array.isArray(content)) {
+        for (const part of content) {
+          candidates.push(part);
+          if ((part as { text?: unknown }).text) candidates.push((part as { text?: unknown }).text);
+          if ((part as { output_text?: unknown }).output_text) candidates.push((part as { output_text?: unknown }).output_text);
+        }
+      }
+    }
+  }
+
+  if (Array.isArray(data.choices)) {
+    for (const choice of data.choices) {
+      candidates.push(choice);
+      const message = (choice as { message?: unknown }).message;
+      if (message) candidates.push(message);
+      const content = (message as { content?: unknown })?.content;
+      if (content) candidates.push(content);
+    }
+  }
+
+  return candidates;
+}
+
+function getFirstReadableText(payloads: unknown[]): string {
+  for (const payload of payloads) {
+    if (typeof payload === 'string' && payload.trim()) return stripMarkdownJsonFence(payload).trim();
+    if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+      const text = (payload as { text?: unknown }).text;
+      if (typeof text === 'string' && text.trim()) return stripMarkdownJsonFence(text).trim();
+      const content = (payload as { content?: unknown }).content;
+      if (typeof content === 'string' && content.trim()) return stripMarkdownJsonFence(content).trim();
+    }
+  }
+  return '';
+}
+
+function buildLooseOpenAiResult(rawText: string, rows: WrongRow[]): { summary: string; items: InsightItem[] } | null {
+  const plain = String(rawText || '').replace(/\s+/g, ' ').trim();
+  if (!plain) return null;
+  const fallback = fallbackAnalyze(rows);
+  return {
+    summary: plain.slice(0, 650),
+    items: fallback.items.slice(0, 8),
   };
 }
 
@@ -168,8 +262,13 @@ async function openAiAnalyze(rows: Array<{ question_text: string; question_level
 
       if (response.ok) {
         const data = await response.json();
-        const parsed = parseAiJsonContent(data?.output_text || '');
-        if (parsed && parsed.items.length) return { result: parsed, error: null };
+        const payloads = extractCandidatePayloads(data);
+        for (const payload of payloads) {
+          const parsed = parseAiJsonContent(payload);
+          if (parsed && parsed.items.length) return { result: parsed, error: null };
+        }
+        const loose = buildLooseOpenAiResult(getFirstReadableText(payloads), rows);
+        if (loose && loose.items.length) return { result: loose, error: null };
         lastError = `OpenAI responses (${model}) returned empty or invalid JSON payload`;
       } else {
         const errorBody = await response.text();
@@ -209,9 +308,13 @@ async function openAiAnalyze(rows: Array<{ question_text: string; question_level
       }
 
       const data = await response.json();
-      const content = data?.choices?.[0]?.message?.content;
-      const parsed = parseAiJsonContent(content);
-      if (parsed && parsed.items.length) return { result: parsed, error: null };
+      const payloads = extractCandidatePayloads(data);
+      for (const payload of payloads) {
+        const parsed = parseAiJsonContent(payload);
+        if (parsed && parsed.items.length) return { result: parsed, error: null };
+      }
+      const loose = buildLooseOpenAiResult(getFirstReadableText(payloads), rows);
+      if (loose && loose.items.length) return { result: loose, error: null };
       lastError = `OpenAI chat completions (${model}) returned empty or invalid JSON payload`;
     } catch {
       // Try next model candidate.

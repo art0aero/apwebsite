@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     let selectedStudent: Record<string, unknown> | null = null;
     if (payload.student_user_id) {
       const studentId = String(payload.student_user_id);
-      const [attemptsRes, lessonsRes, insightsRes] = await Promise.all([
+      const [attemptsRes, lessonsRes, insightsRes, curriculumRes] = await Promise.all([
         adminClient
           .from('test_results')
           .select('*')
@@ -108,16 +108,26 @@ Deno.serve(async (req) => {
           .eq('user_id', studentId)
           .order('created_at', { ascending: false })
           .limit(20),
+        adminClient
+          .from('study_curriculum')
+          .select('id,level,path_from,path_to,track,ordinal,title,description,estimated_lessons,unit_code,source_file')
+          .eq('is_active', true)
+          .order('path_from', { ascending: true })
+          .order('path_to', { ascending: true })
+          .order('track', { ascending: true })
+          .order('ordinal', { ascending: true }),
       ]);
 
       if (attemptsRes.error) throw new Error(attemptsRes.error.message);
       if (lessonsRes.error) throw new Error(lessonsRes.error.message);
       if (insightsRes.error) throw new Error(insightsRes.error.message);
+      if (curriculumRes.error) throw new Error(curriculumRes.error.message);
 
       selectedStudent = {
         attempts: attemptsRes.data || [],
         lessons: lessonsRes.data || [],
         insights: insightsRes.data || [],
+        curriculum_catalog: curriculumRes.data || [],
       };
     }
 
