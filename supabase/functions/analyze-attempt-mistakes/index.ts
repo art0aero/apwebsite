@@ -15,6 +15,8 @@ type InsightItem = {
 type WrongRow = {
   question_text: string;
   question_level: string;
+  selected_option_text?: string;
+  correct_option_text?: string;
 };
 
 type TestAnswer = {
@@ -27,7 +29,21 @@ type TestResultRow = {
   answers?: TestAnswer[] | null;
 };
 
-function fallbackAnalyze(rows: Array<{ question_text: string; question_level: string }>): { summary: string; items: InsightItem[] } {
+type LessonHint = {
+  lesson_index: number;
+  level: string;
+  title: string;
+  description?: string;
+};
+
+function normalizeCefrLevel(raw: unknown): string {
+  const value = String(raw || '').trim().toUpperCase();
+  if (value === 'A0' || value === 'BELOW A1') return 'A1';
+  if (['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(value)) return value;
+  return 'A1';
+}
+
+function fallbackAnalyze(rows: Array<WrongRow>): { summary: string; items: InsightItem[] } {
   const levelStats = new Map<string, number>();
   const buckets = new Map<string, string[]>();
 
@@ -51,13 +67,20 @@ function fallbackAnalyze(rows: Array<{ question_text: string; question_level: st
   const sortedTopics = [...buckets.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 5);
   const weakestLevel = [...levelStats.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || 'A1';
 
-  const items: InsightItem[] = sortedTopics.map(([topic], idx) => ({
-    issue: topic,
-    why: `Ошибки повторяются в блоке «${topic}», поэтому текущая причина - пробел в базовом правиле/паттерне.`,
-    focus: `Повторить правило и сделать 15-20 упражнений на тему «${topic}».`,
-    priority: idx === 0 ? 'high' : idx <= 2 ? 'medium' : 'low',
-    level: weakestLevel,
-  }));
+  const items: InsightItem[] = sortedTopics.map(([topic], idx) => {
+    const sample = rows.find((row) => row.question_text.toLowerCase().includes(topic.toLowerCase())) || rows[idx] || null;
+    const delta = sample?.selected_option_text && sample?.correct_option_text
+      ? `В ответе выбран вариант «${sample.selected_option_text}», но корректно «${sample.correct_option_text}».`
+      : 'Есть повторяющиеся ошибки в формулировках этого блока.';
+
+    return {
+      issue: topic,
+      why: `${delta} Это указывает на пробел в паттерне «${topic}».`,
+      focus: `На ближайших уроках уровня ${weakestLevel} выделить отдельный блок на тему «${topic}»: правило + 8-10 целевых примеров + мини-практика в речи.`,
+      priority: idx === 0 ? 'high' : idx <= 2 ? 'medium' : 'low',
+      level: weakestLevel,
+    };
+  });
 
   const summary = rows.length
     ? `Найдено ${rows.length} ошибок. Основной фокус: уровень ${weakestLevel}, темы ${items.map((item) => item.issue).join(', ')}.`
@@ -76,7 +99,7 @@ function normalizeInsightObject(parsed: Record<string, unknown>): { summary: str
       priority: ['high', 'medium', 'low'].includes(String((item as { priority?: string }).priority))
         ? (String((item as { priority?: string }).priority) as 'high' | 'medium' | 'low')
         : 'medium',
-      level: String((item as { level?: string }).level || 'A1').trim().toUpperCase(),
+      level: normalizeCefrLevel((item as { level?: string }).level || 'A1'),
     }))
     .filter((item) => item.issue && item.why && item.focus)
     .slice(0, 8);
@@ -195,7 +218,7 @@ type OpenAiAnalyzeResult = {
   error: string | null;
 };
 
-async function openAiAnalyze(rows: Array<{ question_text: string; question_level: string }>): Promise<OpenAiAnalyzeResult> {
+async function openAiAnalyze(rows: WrongRow[], lessonHints: LessonHint[]): Promise<OpenAiAnalyzeResult> {
   const apiKey = Deno.env.get('OPENAI_API_KEY');
   if (!apiKey) return { result: null, error: 'OPENAI_API_KEY is missing' };
   if (!rows.length) return { result: null, error: 'No mistake rows for AI analysis' };
@@ -209,8 +232,35 @@ async function openAiAnalyze(rows: Array<{ question_text: string; question_level
   const baseUrl = baseUrlRaw.endsWith('/v1') ? baseUrlRaw.slice(0, -3) : baseUrlRaw;
   const responsesUrl = `${baseUrl}/v1/responses`;
   const chatCompletionsUrl = `${baseUrl}/v1/chat/completions`;
-  const systemText = 'Ты методист английского. Верни JSON формата {"summary": string, "items": [{"issue": string, "why": string, "focus": string, "priority": "high|medium|low", "level": "A1|A2|B1|B2|C1|C2"}]}. Без лишнего текста.';
-  const userText = `Ошибочные вопросы ученика: ${JSON.stringify(rows)}`;
+  const systemText = [
+    'Ты ИнстантМетодист - сильный методист английского по CEFR.',
+    'Задача: разобрать только реальные ошибки ученика и дать персональные рекомендации без воды.',
+    'Обязательно используй разницу между selected_option_text и correct_option_text, если она дана.',
+    'Для каждого пункта items:',
+    '1) issue: конкретный пробел (правило/конструкция/лексика).',
+    '2) why: почему ответ неверный (краткое обоснование на основе ошибки).',
+    '3) focus: что делать на уроке + привязка к одному из lesson_hints в формате "Урок #N (LEVEL): TITLE ...".',
+    '4) priority: high/medium/low.',
+    '5) level: один из A1,A2,B1,B2,C1,C2 где закрывать пробел.',
+    'Не выдумывай факты, которых нет во входных данных.',
+    'Верни только JSON объекта формата {"summary": string, "items": [...]}, без markdown и без пояснений вне JSON.',
+  ].join(' ');
+  const userPayload = {
+    mistakes: rows.slice(0, 80).map((row) => ({
+      question_text: row.question_text,
+      question_level: normalizeCefrLevel(row.question_level),
+      selected_option_text: row.selected_option_text || '',
+      correct_option_text: row.correct_option_text || '',
+    })),
+    lesson_hints: (lessonHints || []).slice(0, 120).map((lesson) => ({
+      lesson_index: lesson.lesson_index,
+      level: normalizeCefrLevel(lesson.level),
+      title: lesson.title,
+    })),
+    output_language: 'ru',
+    max_items: 6,
+  };
+  const userText = JSON.stringify(userPayload);
   let lastError = 'OpenAI request failed in both responses/chat modes';
 
   for (const model of modelCandidates) {
@@ -333,7 +383,7 @@ async function loadWrongRowsFromAttemptItems(
 
   const { data, error } = await adminClient
     .from('attempt_items')
-    .select('question_text,question_level')
+    .select('question_text,question_level,selected_option_text,correct_option_text')
     .eq('user_id', userId)
     .eq('attempt_id', attemptId)
     .eq('is_correct', false)
@@ -361,17 +411,20 @@ async function loadWrongRowsFromLegacyAnswers(
   const questionIds = [...new Set(normalizedAnswers.map((item) => item.question_id))];
   const { data: questions, error: questionError } = await adminClient
     .from('question_bank')
-    .select('id,question_text,level,correct_option')
+    .select('id,question_text,level,correct_option,options')
     .in('id', questionIds);
 
   if (questionError) throw new Error(questionError.message);
 
-  const questionMap = new Map<number, { question_text: string; level: string; correct_option: number }>();
+  const questionMap = new Map<number, { question_text: string; level: string; correct_option: number; options: string[] }>();
   for (const row of questions || []) {
+    const optionsRaw = (row as { options?: unknown }).options;
+    const options = Array.isArray(optionsRaw) ? optionsRaw.map((item) => String(item || '')) : [];
     questionMap.set(Number((row as { id: number }).id), {
       question_text: String((row as { question_text?: string }).question_text || ''),
       level: String((row as { level?: string }).level || 'A1'),
       correct_option: Number((row as { correct_option?: number }).correct_option ?? -1),
+      options,
     });
   }
 
@@ -383,6 +436,8 @@ async function loadWrongRowsFromLegacyAnswers(
     wrongRows.push({
       question_text: question.question_text,
       question_level: question.level,
+      selected_option_text: question.options[item.selected_option] || '',
+      correct_option_text: question.options[question.correct_option] || '',
     });
   }
 
@@ -433,12 +488,6 @@ Deno.serve(async (req) => {
       rows = await loadWrongRowsFromLegacyAnswers(selectedResult, adminClient);
     }
 
-    const aiProbe = await openAiAnalyze(rows);
-    const aiResult = aiProbe.result;
-    const fallbackResult = fallbackAnalyze(rows);
-    const finalResult = aiResult && aiResult.items.length ? aiResult : fallbackResult;
-    const source = aiResult && aiResult.items.length ? 'openai' : 'fallback';
-
     const { data: activePlan } = await adminClient
       .from('study_plan_versions')
       .select('id')
@@ -447,6 +496,42 @@ Deno.serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    let plannedLessons: Array<{
+      id: string;
+      lesson_index: number;
+      level: string;
+      title: string;
+      description: string | null;
+      priority_note: string | null;
+      status: string;
+    }> = [];
+
+    if (activePlan?.id) {
+      const { data: lessonsData, error: lessonsError } = await adminClient
+        .from('study_lessons')
+        .select('id,lesson_index,level,title,description,priority_note,status')
+        .eq('plan_version_id', activePlan.id)
+        .in('status', ['planned', 'rescheduled'])
+        .order('lesson_index', { ascending: true })
+        .limit(500);
+
+      if (lessonsError) throw new Error(lessonsError.message);
+      plannedLessons = (lessonsData || []) as typeof plannedLessons;
+    }
+
+    const lessonHints: LessonHint[] = plannedLessons.map((lesson) => ({
+      lesson_index: Number(lesson.lesson_index || 0),
+      level: normalizeCefrLevel(lesson.level),
+      title: String(lesson.title || ''),
+      description: String(lesson.description || ''),
+    }));
+
+    const aiProbe = await openAiAnalyze(rows, lessonHints);
+    const aiResult = aiProbe.result;
+    const fallbackResult = fallbackAnalyze(rows);
+    const finalResult = aiResult && aiResult.items.length ? aiResult : fallbackResult;
+    const source = aiResult && aiResult.items.length ? 'openai' : 'fallback';
 
     const { data: insightRow, error: insightError } = await adminClient
       .from('ai_insights')
@@ -464,18 +549,14 @@ Deno.serve(async (req) => {
     if (insightError) throw new Error(insightError.message);
 
     if (activePlan?.id && finalResult.items.length) {
-      const { data: lessons } = await adminClient
-        .from('study_lessons')
-        .select('id,level,priority_note,status')
-        .eq('plan_version_id', activePlan.id)
-        .in('status', ['planned', 'rescheduled'])
-        .order('lesson_index', { ascending: true });
-
       const updates: Array<{ id: string; priority_note: string }> = [];
       for (const item of finalResult.items) {
-        const match = (lessons || []).find((lesson) => !lesson.priority_note && String(lesson.level).toUpperCase() === item.level);
+        const match = plannedLessons.find((lesson) => !lesson.priority_note && normalizeCefrLevel(lesson.level) === item.level);
         if (!match) continue;
-        updates.push({ id: String(match.id), priority_note: `Особый фокус: ${item.issue}. ${item.focus}` });
+        updates.push({
+          id: String(match.id),
+          priority_note: `ИнстантМетодист: ${item.issue}. ${item.focus}`,
+        });
       }
 
       for (const update of updates.slice(0, 6)) {

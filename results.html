@@ -66,8 +66,8 @@
         Заполните ФИО и телефон. Перед каждым запуском теста вы будете получать это напоминание.
       </div>
 
-      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <article class="bg-white rounded-3xl p-6 shadow-xl border border-white/70 lg:col-span-2">
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-start">
+        <article class="bg-white rounded-3xl p-5 shadow-xl border border-white/70 lg:col-span-2 self-start">
           <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 class="text-2xl font-light tracking-tight">Профиль ученика</h2>
             <span id="profile-status" class="text-xs uppercase tracking-widest px-3 py-1 rounded-full bg-red-100 text-red-700">Незаполнен</span>
@@ -101,41 +101,70 @@
           </div>
         </article>
 
-        <article class="bg-neutral-900 text-white rounded-3xl p-6 shadow-2xl border border-white/10">
-          <h2 class="text-xl font-light tracking-tight mb-4">Смета и прогресс</h2>
-          <div class="space-y-4">
-            <div>
-              <p class="text-xs uppercase tracking-widest text-neutral-400">Текущий уровень</p>
-              <p id="stat-level" class="text-2xl font-light">-</p>
+        <article class="bg-neutral-900 text-white rounded-3xl p-5 shadow-2xl border border-white/10 self-start">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-light tracking-tight">Смета и прогресс</h2>
+            <span id="stat-progress-percent" class="text-[11px] uppercase tracking-widest px-2 py-1 rounded-full bg-[#f19737]/20 text-[#f6b47c]">0%</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            <div class="rounded-xl bg-white/5 border border-white/10 px-3 py-2">
+              <p class="text-[10px] uppercase tracking-widest text-neutral-400">Текущий уровень</p>
+              <p id="stat-level" class="text-lg font-semibold mt-1">-</p>
             </div>
-            <div>
-              <p class="text-xs uppercase tracking-widest text-neutral-400">Цель</p>
-              <p id="stat-goal" class="text-2xl font-light">-</p>
+            <div class="rounded-xl bg-white/5 border border-white/10 px-3 py-2">
+              <p class="text-[10px] uppercase tracking-widest text-neutral-400">Цель</p>
+              <p id="stat-goal" class="text-lg font-semibold mt-1">-</p>
             </div>
-            <div>
-              <p class="text-xs uppercase tracking-widest text-neutral-400">Всего занятий до цели</p>
-              <p id="stat-total-lessons" class="text-2xl font-light">-</p>
+          </div>
+
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-3 mb-3">
+            <p class="text-[10px] uppercase tracking-widest text-neutral-400">Шкала занятий</p>
+            <svg viewBox="0 0 240 140" class="w-full h-28 mt-1">
+              <path id="stat-gauge-track" d="" stroke="rgba(255,255,255,0.22)" stroke-width="12" fill="none" stroke-linecap="round"></path>
+              <path id="stat-gauge-progress" d="" stroke="#f19737" stroke-width="12" fill="none" stroke-linecap="round"></path>
+              <circle id="stat-gauge-knob" cx="20" cy="110" r="6" fill="#f19737"></circle>
+              <text x="120" y="96" text-anchor="middle" class="fill-white text-[16px] font-semibold" id="stat-gauge-main">0 / 0</text>
+              <text x="120" y="114" text-anchor="middle" class="fill-neutral-300 text-[10px]">пройдено занятий</text>
+            </svg>
+            <div class="flex items-center justify-between text-[11px] text-neutral-300 -mt-1">
+              <span>0</span>
+              <span id="stat-total-lessons-scale">0</span>
             </div>
-            <div>
-              <p class="text-xs uppercase tracking-widest text-neutral-400">Пройдено занятий</p>
-              <p id="stat-completed-lessons" class="text-2xl font-light">-</p>
+            <div class="mt-1 text-[11px] text-neutral-300">
+              <span id="stat-completed-lessons">0</span> из <span id="stat-total-lessons">0</span> занятий
             </div>
-            <div>
-              <p class="text-xs uppercase tracking-widest text-neutral-400">Средняя стоимость занятия</p>
-              <p id="stat-avg-cost" class="text-2xl font-light">-</p>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 mb-3 text-[11px]">
+            <div class="rounded-xl bg-white/5 border border-white/10 px-2 py-2">
+              <p class="uppercase tracking-widest text-[9px] text-neutral-400">Средняя</p>
+              <p id="stat-avg-cost" class="mt-1 text-sm font-semibold">-</p>
             </div>
-            <div>
-              <p class="text-xs uppercase tracking-widest text-neutral-400">Ежемесячный платеж</p>
-              <p id="stat-monthly-payment" class="text-2xl font-light">-</p>
+            <div class="rounded-xl bg-white/5 border border-white/10 px-2 py-2">
+              <p class="uppercase tracking-widest text-[9px] text-neutral-400">Ежемесячно</p>
+              <p id="stat-monthly-payment" class="mt-1 text-sm font-semibold">-</p>
             </div>
-            <div>
-              <p class="text-xs uppercase tracking-widest text-neutral-400">Остаток стоимости</p>
-              <p id="stat-remaining" class="text-2xl font-light">-</p>
+            <div class="rounded-xl bg-white/5 border border-white/10 px-2 py-2">
+              <p class="uppercase tracking-widest text-[9px] text-neutral-400">Остаток</p>
+              <p id="stat-remaining" class="mt-1 text-sm font-semibold">-</p>
             </div>
-            <div>
-              <p class="text-xs uppercase tracking-widest text-neutral-400">Финишная дата</p>
-              <p id="stat-end-date" class="text-xl font-light">-</p>
+          </div>
+
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+            <p class="text-[10px] uppercase tracking-widest text-neutral-400 mb-2">Таймлайн пути</p>
+            <div class="relative h-9">
+              <div class="absolute left-0 right-0 top-4 h-2 rounded-full bg-white/20 overflow-hidden">
+                <div id="stat-timeline-progress" class="h-2 rounded-full bg-[#f19737]" style="width:0%"></div>
+              </div>
+              <div id="stat-timeline-plane" class="absolute top-0 text-lg transition-all duration-200" style="left:0%; transform:translateX(-50%);">✈</div>
+              <div id="stat-timeline-levels" class="absolute left-0 right-0 top-0 h-8"></div>
             </div>
+            <div class="flex items-center justify-between text-[10px] text-neutral-300 mt-2">
+              <span id="stat-start-label">Начало</span>
+              <span id="stat-end-label">Финиш</span>
+            </div>
+            <p id="stat-end-date" class="mt-1 text-[11px] text-[#f6b47c]"></p>
           </div>
         </article>
       </section>
@@ -305,6 +334,31 @@
       if (diffMs <= 0) return 1;
       const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
       return Math.max(1, Math.ceil(diffDays / 30));
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function levelPathForTimeline(currentLevel, targetLevel, lessons) {
+      const normalizedCurrent = normalizeLevelForCompare(currentLevel);
+      const normalizedTarget = normalizeLevelForCompare(targetLevel);
+      const allowed = new Set(['A0', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
+      const lessonLevels = (Array.isArray(lessons) ? lessons : [])
+        .map((lesson) => normalizeLevelForCompare(lesson.level || ''))
+        .filter((level, index, arr) => allowed.has(level) && arr.indexOf(level) === index);
+
+      const path = [];
+      if (allowed.has(normalizedCurrent)) path.push(normalizedCurrent);
+      lessonLevels.forEach((level) => {
+        if (!path.includes(level)) path.push(level);
+      });
+      if (allowed.has(normalizedTarget) && !path.includes(normalizedTarget)) path.push(normalizedTarget);
+      if (path.length < 2 && normalizedTarget && normalizedCurrent !== normalizedTarget) {
+        if (allowed.has(normalizedTarget)) path.push(normalizedTarget);
+      }
+      if (!path.length) return ['A1'];
+      return path;
     }
 
     function escapeHTML(value) {
@@ -505,15 +559,70 @@
       const avgCost = totalLessons > 0 ? totalCost / totalLessons : 0;
       const monthsLeft = estimateMonthsLeft(activePlan?.end_date || null);
       const monthlyPayment = monthsLeft > 0 ? remainingCost / monthsLeft : 0;
+      const progressRatio = totalLessons > 0 ? clamp(completedLessons / totalLessons, 0, 1) : 0;
+      const progressPercent = Math.round(progressRatio * 100);
+      const currentLevel = latest?.level || dashboard?.goal?.current_level || 'A1';
+      const targetLevel = dashboard?.goal?.target_level || '-';
+      const timelineLevels = levelPathForTimeline(currentLevel, targetLevel, lessons);
 
-      document.getElementById('stat-level').textContent = latest?.level || '-';
-      document.getElementById('stat-goal').textContent = dashboard?.goal?.target_level || '-';
+      document.getElementById('stat-level').textContent = currentLevel || '-';
+      document.getElementById('stat-goal').textContent = targetLevel || '-';
       document.getElementById('stat-total-lessons').textContent = activePlan ? String(totalLessons) : '-';
       document.getElementById('stat-completed-lessons').textContent = activePlan ? String(completedLessons) : '-';
       document.getElementById('stat-avg-cost').textContent = activePlan ? formatMoney(avgCost) : '-';
       document.getElementById('stat-monthly-payment').textContent = activePlan ? formatMoney(monthlyPayment) : '-';
       document.getElementById('stat-remaining').textContent = activePlan ? formatMoney(remainingCost) : '-';
-      document.getElementById('stat-end-date').textContent = activePlan ? formatDate(activePlan.end_date) : '-';
+      document.getElementById('stat-end-date').textContent = activePlan ? `Финишная дата: ${formatDate(activePlan.end_date)}` : 'Финишная дата: -';
+      document.getElementById('stat-total-lessons-scale').textContent = activePlan ? String(totalLessons) : '0';
+      document.getElementById('stat-progress-percent').textContent = activePlan ? `${progressPercent}%` : '0%';
+      document.getElementById('stat-gauge-main').textContent = activePlan ? `${completedLessons} / ${totalLessons}` : '0 / 0';
+      document.getElementById('stat-start-label').textContent = `Старт: ${currentLevel || '-'}`;
+      document.getElementById('stat-end-label').textContent = `Цель: ${targetLevel || '-'}`;
+
+      const timelineProgressEl = document.getElementById('stat-timeline-progress');
+      const timelinePlaneEl = document.getElementById('stat-timeline-plane');
+      timelineProgressEl.style.width = `${activePlan ? progressPercent : 0}%`;
+      timelinePlaneEl.style.left = `${activePlan ? progressPercent : 0}%`;
+
+      const levelsContainer = document.getElementById('stat-timeline-levels');
+      levelsContainer.innerHTML = '';
+      const steps = Math.max(1, timelineLevels.length - 1);
+      timelineLevels.forEach((level, index) => {
+        const ratio = steps > 0 ? index / steps : 0;
+        const marker = document.createElement('div');
+        marker.className = 'absolute -translate-x-1/2 top-1 text-center';
+        marker.style.left = `${ratio * 100}%`;
+        const passed = ratio <= progressRatio + 0.001;
+        marker.innerHTML = `
+          <div class="w-2.5 h-2.5 rounded-full mx-auto ${passed ? 'bg-[#f19737]' : 'bg-white/40'}"></div>
+          <p class="text-[9px] mt-1 ${passed ? 'text-[#ffd4a8]' : 'text-neutral-400'}">${escapeHTML(level)}</p>
+        `;
+        levelsContainer.appendChild(marker);
+      });
+
+      const gaugeTrack = document.getElementById('stat-gauge-track');
+      const gaugeProgress = document.getElementById('stat-gauge-progress');
+      const gaugeKnob = document.getElementById('stat-gauge-knob');
+      const gaugeCenterX = 120;
+      const gaugeCenterY = 110;
+      const gaugeRadius = 92;
+      const startX = gaugeCenterX - gaugeRadius;
+      const startY = gaugeCenterY;
+      const endX = gaugeCenterX + gaugeRadius;
+      const endY = gaugeCenterY;
+      gaugeTrack.setAttribute('d', `M ${startX} ${startY} A ${gaugeRadius} ${gaugeRadius} 0 0 1 ${endX} ${endY}`);
+      if (!activePlan || progressRatio <= 0) {
+        gaugeProgress.setAttribute('d', `M ${startX} ${startY}`);
+        gaugeKnob.setAttribute('cx', String(startX));
+        gaugeKnob.setAttribute('cy', String(startY));
+      } else {
+        const theta = Math.PI * (1 - progressRatio);
+        const progressX = gaugeCenterX + (gaugeRadius * Math.cos(theta));
+        const progressY = gaugeCenterY - (gaugeRadius * Math.sin(theta));
+        gaugeProgress.setAttribute('d', `M ${startX} ${startY} A ${gaugeRadius} ${gaugeRadius} 0 0 1 ${progressX} ${progressY}`);
+        gaugeKnob.setAttribute('cx', String(progressX));
+        gaugeKnob.setAttribute('cy', String(progressY));
+      }
 
       if (draft?.id) {
         activeDraftId = draft.id;
@@ -674,25 +783,25 @@
 
       if (!list.length) {
         const empty = '<p class="text-white/70">Пока нет AI-разборов. Нажмите «Обновить».</p>';
-        container.innerHTML = '<p class="text-neutral-500">Пока нет AI-разборов.</p>';
+        container.innerHTML = '<p class="text-white/70">Пока нет AI-разборов.</p>';
         dogContainer.innerHTML = empty;
         return;
       }
 
       list.forEach((entry) => {
         const items = Array.isArray(entry.items) ? entry.items : [];
-        const sourceText = escapeHTML(entry.source || 'fallback');
+        const sourceText = 'ИнстантМетодист';
         const summaryText = escapeHTML(entry.summary || '');
         const createdAt = escapeHTML(formatDateTime(entry.created_at));
         const chips = items.slice(0, 3)
-          .map((item) => `<span class="inline-block px-2 py-1 rounded-full text-[10px] uppercase tracking-widest bg-[#f19737]/20 text-[#f19737] mr-1 mb-1">${escapeHTML(item.priority || 'focus')}: ${escapeHTML(item.issue || 'тема')}</span>`)
+          .map((item) => `<span class="inline-block px-2 py-1 rounded-full text-[10px] uppercase tracking-widest bg-[#f19737]/20 text-[#ffd0a4] mr-1 mb-1">${escapeHTML(item.priority || 'focus')}: ${escapeHTML(item.issue || 'тема')}</span>`)
           .join('');
 
         const card = document.createElement('div');
-        card.className = 'p-3 rounded-xl border border-neutral-200 bg-neutral-50';
+        card.className = 'p-3 rounded-xl border border-white/10 bg-white/5 text-white';
         card.innerHTML = `
-          <p class="text-xs uppercase tracking-widest text-neutral-500 mb-1">${sourceText} • ${createdAt}</p>
-          <p class="font-medium text-sm mb-2">${summaryText}</p>
+          <p class="text-xs uppercase tracking-widest text-[#f2b78b] mb-1">${sourceText} • ${createdAt}</p>
+          <p class="font-medium text-sm text-white mb-2">${summaryText}</p>
           <div>${chips || ''}</div>
         `;
         container.appendChild(card);
@@ -701,7 +810,7 @@
         dogCard.className = 'p-3 rounded-xl bg-white/10 border border-white/10';
         dogCard.innerHTML = `
           <p class="text-[10px] uppercase tracking-widest text-[#f2b78b] mb-1">${sourceText}</p>
-          <p class="text-sm mb-2">${summaryText}</p>
+          <p class="text-sm text-white mb-2">${summaryText}</p>
           <div class="text-xs text-white/80">${chips || ''}</div>
         `;
         dogContainer.appendChild(dogCard);
