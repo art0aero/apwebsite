@@ -3,12 +3,13 @@ import path from 'node:path';
 
 const projectRef = process.env.SUPABASE_PROJECT_REF;
 const anonKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_IPiv65AiEjXlmbebq-3jOQ_aVR-5_RY';
+const explicitSupabaseUrl = process.env.SUPABASE_URL || '';
 const testBaseUrl = process.env.TEST_BASE_URL || '';
 const iterations = Math.max(3, Number(process.env.PERF_ITERATIONS || 8));
 const baselinePath = path.resolve('.instructions/api_baseline_result.json');
 
-if (!projectRef) {
-  console.error('Missing SUPABASE_PROJECT_REF');
+if (!projectRef && !explicitSupabaseUrl) {
+  console.error('Missing SUPABASE_URL or SUPABASE_PROJECT_REF');
   process.exit(1);
 }
 
@@ -26,7 +27,7 @@ if (!qaEmail || !qaPassword) {
   process.exit(1);
 }
 
-const supabaseBase = `https://${projectRef}.supabase.co`;
+const supabaseBase = explicitSupabaseUrl || `https://${projectRef}.supabase.co`;
 
 function quantile(sortedNumbers, q) {
   if (!sortedNumbers.length) return 0;
@@ -122,7 +123,8 @@ async function main() {
     timestamp: new Date().toISOString(),
     iterations,
     supabase: {
-      get_student_dashboard: await measureFunction('get-student-dashboard', token),
+      get_student_dashboard_core: await measureFunction('get-student-dashboard-core', token),
+      get_student_dashboard_plan: await measureFunction('get-student-dashboard-plan', token),
       get_test_catalog: await measureFunction('get-test-catalog', token, {}, 'GET'),
       get_admin_dashboard: null,
     },
@@ -141,7 +143,9 @@ async function main() {
     report.web_host = await measureStaticPage(resultsUrl);
   }
 
-  const dashboardP95 = Number(report.supabase.get_student_dashboard?.p95_ms || 0);
+  const dashboardCoreP95 = Number(report.supabase.get_student_dashboard_core?.p95_ms || 0);
+  const dashboardPlanP95 = Number(report.supabase.get_student_dashboard_plan?.p95_ms || 0);
+  const dashboardP95 = Math.max(dashboardCoreP95, dashboardPlanP95);
   const staticP95 = Number(report.web_host?.p95_ms || 0);
   if (dashboardP95 > 700 && (!staticP95 || staticP95 < dashboardP95 / 2)) {
     report.diagnosis = 'Основная задержка в Supabase Edge/DB вызовах, а не в отдаче статической страницы.';

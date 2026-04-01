@@ -1,5 +1,5 @@
 import { CORS_HEADERS, ensureMethodistAccess, getAuthContext, jsonResponse, parseJson } from '../_shared/common.ts';
-import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 type Payload = {
   action?: 'add' | 'update' | 'delete';

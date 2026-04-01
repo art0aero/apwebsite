@@ -1,5 +1,5 @@
-import { createClient } from 'jsr:@supabase/supabase-js@2';
-import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { CORS_HEADERS, createDedupeKey, ensureEnv, ensureMethodistAccess, getAuthContext, jsonResponse } from '../_shared/common.ts';
 
 type AirtableRecord = {
@@ -154,7 +154,11 @@ function chunk<T>(items: T[], size: number): T[][] {
   return result;
 }
 
-async function airtableListRecords(config: AirtableConfig, tableName: string): Promise<AirtableRecord[]> {
+async function airtableListRecords(
+  config: AirtableConfig,
+  tableName: string,
+  maxRecords = 0,
+): Promise<AirtableRecord[]> {
   const records: AirtableRecord[] = [];
   let offset: string | null = null;
 
@@ -177,6 +181,10 @@ async function airtableListRecords(config: AirtableConfig, tableName: string): P
 
     const body = await response.json();
     records.push(...(Array.isArray(body?.records) ? body.records : []));
+    if (maxRecords > 0 && records.length >= maxRecords) {
+      records.length = maxRecords;
+      break;
+    }
     offset = body?.offset || null;
   } while (offset);
 
@@ -734,7 +742,8 @@ Deno.serve(async (req) => {
       await ensureMethodistAccess(auth.adminClient, auth.user.id, auth.user.email);
     }
 
-    const airtableRecords = await airtableListRecords(config, config.calendarTableName);
+    const pullFetchLimit = mode === 'pull_only' && config.pullMaxRecords > 0 ? config.pullMaxRecords : 0;
+    const airtableRecords = await airtableListRecords(config, config.calendarTableName, pullFetchLimit);
 
     let pullStats = { processed: 0, skipped: 0, affected_lessons: 0, touched_plan_versions: 0 };
     if (mode !== 'push_only') {

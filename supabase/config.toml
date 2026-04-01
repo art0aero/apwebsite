@@ -24,6 +24,12 @@ verify_jwt = false
 [functions.get-student-dashboard]
 verify_jwt = false
 
+[functions.get-student-dashboard-core]
+verify_jwt = false
+
+[functions.get-student-dashboard-plan]
+verify_jwt = false
+
 [functions.analyze-attempt-mistakes]
 verify_jwt = false
 

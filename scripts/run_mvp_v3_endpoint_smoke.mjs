@@ -4,17 +4,18 @@ import path from 'node:path';
 const projectRef = process.env.SUPABASE_PROJECT_REF;
 const serviceKey = process.env.SUPABASE_SECRET;
 const anonKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_IPiv65AiEjXlmbebq-3jOQ_aVR-5_RY';
+const explicitSupabaseUrl = process.env.SUPABASE_URL || '';
 const airtableApiKey = process.env.AIRTABLE_API_KEY || '';
 const airtableBaseId = process.env.AIRTABLE_BASE_ID || '';
 const airtableStudentsTable = process.env.AIRTABLE_STUDENTS_TABLE_NAME || 'Students';
 const airtableCalendarTable = process.env.AIRTABLE_CALENDAR_TABLE_NAME || 'Student Calendar';
 
-if (!projectRef || !serviceKey || !anonKey) {
-  console.error('Missing env vars. Need SUPABASE_PROJECT_REF, SUPABASE_SECRET, SUPABASE_ANON_KEY');
+if ((!projectRef && !explicitSupabaseUrl) || !serviceKey || !anonKey) {
+  console.error('Missing env vars. Need SUPABASE_URL or SUPABASE_PROJECT_REF, plus SUPABASE_SECRET and SUPABASE_ANON_KEY');
   process.exit(1);
 }
 
-const baseUrl = `https://${projectRef}.supabase.co`;
+const baseUrl = explicitSupabaseUrl || `https://${projectRef}.supabase.co`;
 
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, options);
@@ -236,11 +237,13 @@ async function run() {
   assert(confirmedInitial.activated === true, 'confirm-plan-version: activated must be true');
   logCheck('confirm-plan-version (initial)');
 
-  console.log('Smoke: get-student-dashboard...');
-  const dashboard1 = await callEdge('get-student-dashboard', studentToken, {}, 'POST');
-  assert(dashboard1.goal?.target_level === 'B2', 'get-student-dashboard: expected target_level B2');
-  assert(Array.isArray(dashboard1.plan?.lessons) && dashboard1.plan.lessons.length > 0, 'get-student-dashboard: lessons must exist');
-  logCheck('get-student-dashboard', { lessons: dashboard1.plan.lessons.length });
+  console.log('Smoke: get-student-dashboard-core + get-student-dashboard-plan...');
+  const dashboardCore = await callEdge('get-student-dashboard-core', studentToken, {}, 'POST');
+  assert(dashboardCore.goal?.target_level === 'B2', 'get-student-dashboard-core: expected target_level B2');
+  const dashboardPlan1 = await callEdge('get-student-dashboard-plan', studentToken, {}, 'POST');
+  assert(Array.isArray(dashboardPlan1.plan?.lessons) && dashboardPlan1.plan.lessons.length > 0, 'get-student-dashboard-plan: lessons must exist');
+  logCheck('get-student-dashboard-core', { target_level: dashboardCore.goal?.target_level || null });
+  logCheck('get-student-dashboard-plan', { lessons: dashboardPlan1.plan.lessons.length });
 
   console.log('Smoke: recalculate-plan + confirm...');
   const recalculated = await callEdge('recalculate-plan', studentToken, {
@@ -299,9 +302,9 @@ async function run() {
   logCheck('admin-toggle-b1-plus', { end_date: toggle.preview?.end_date, total_lessons: toggle.preview?.total_lessons });
 
   console.log('Smoke: admin-update-lessons (update first lesson)...');
-  const dashboard2 = await callEdge('get-student-dashboard', studentToken, {}, 'POST');
-  const activePlanId = dashboard2.plan?.active?.id;
-  const firstLesson = Array.isArray(dashboard2.plan?.lessons) ? dashboard2.plan.lessons[0] : null;
+  const dashboardPlan2 = await callEdge('get-student-dashboard-plan', studentToken, {}, 'POST');
+  const activePlanId = dashboardPlan2.plan?.active?.id;
+  const firstLesson = Array.isArray(dashboardPlan2.plan?.lessons) ? dashboardPlan2.plan.lessons[0] : null;
   assert(activePlanId && firstLesson?.id, 'admin-update-lessons precheck failed: no active plan/lesson');
   const lessonUpdated = await callEdge('admin-update-lessons', methodistToken, {
     action: 'update',
@@ -316,7 +319,7 @@ async function run() {
   logCheck('admin-update-lessons');
 
   console.log('Smoke: sync-attendance-airtable...');
-  const syncResult = await callEdge('sync-attendance-airtable', methodistToken, { mode: 'push_only' }, 'POST');
+  const syncResult = await callEdge('sync-attendance-airtable', methodistToken, { mode: 'pull_only' }, 'POST');
   assert(syncResult.ok === true, 'sync-attendance-airtable: expected ok=true');
   logCheck('sync-attendance-airtable', {
     pull: syncResult.pull || {},

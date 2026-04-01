@@ -141,7 +141,12 @@ async function run() {
     await testPage.waitForSelector('#question-text', { state: 'visible', timeout: 30000 });
 
     for (let i = 0; i < 50; i += 1) {
-      await testPage.locator('#options-container label').first().click();
+      await testPage.waitForSelector('#options-container input[type="radio"]', { state: 'visible', timeout: 30000 });
+      await testPage.locator('#options-container input[type="radio"]').first().check({ force: true });
+      await testPage.waitForFunction(() => {
+        const next = document.getElementById('btn-next');
+        return Boolean(next && !next.disabled);
+      }, { timeout: 30000 });
       await testPage.locator('#btn-next').click();
       if (i < 49) {
         await testPage.waitForTimeout(80);

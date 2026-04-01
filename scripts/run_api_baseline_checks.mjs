@@ -4,13 +4,14 @@ import path from 'node:path';
 const projectRef = process.env.SUPABASE_PROJECT_REF;
 const serviceKey = process.env.SUPABASE_SECRET;
 const anonKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_IPiv65AiEjXlmbebq-3jOQ_aVR-5_RY';
+const explicitSupabaseUrl = process.env.SUPABASE_URL || '';
 
-if (!projectRef || !serviceKey || !anonKey) {
-  console.error('Missing env vars. Need SUPABASE_PROJECT_REF, SUPABASE_SECRET, SUPABASE_ANON_KEY');
+if ((!projectRef && !explicitSupabaseUrl) || !serviceKey || !anonKey) {
+  console.error('Missing env vars. Need SUPABASE_URL or SUPABASE_PROJECT_REF, plus SUPABASE_SECRET and SUPABASE_ANON_KEY');
   process.exit(1);
 }
 
-const baseUrl = `https://${projectRef}.supabase.co`;
+const baseUrl = explicitSupabaseUrl || `https://${projectRef}.supabase.co`;
 
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, options);

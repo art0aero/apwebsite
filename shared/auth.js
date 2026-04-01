@@ -1,6 +1,7 @@
 (function () {
-  const SUPABASE_URL = 'https://dvszkmkxamilxocawbml.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_IPiv65AiEjXlmbebq-3jOQ_aVR-5_RY';
+  const config = window.APP_CONFIG || {};
+  const SUPABASE_URL = config.SUPABASE_URL || 'https://basesupa.genairus.ru';
+  const SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlbGZob3N0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2MDAwMDAwMDAsImV4cCI6MTkxNTM2MDAwMH0.eWIDhJGpK4wQndtEzgsYLxTNBFuzdraxQn0R7Ph53f0';
 
   if (!window.supabase || !window.supabase.createClient) {
     throw new Error('Supabase SDK is not loaded. Include @supabase/supabase-js before shared/auth.js');

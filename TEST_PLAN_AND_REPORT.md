@@ -156,3 +156,67 @@
 4. Performance rerun
 - Latency probe rerun: `get-student-dashboard` p95 around `900ms`.
 - Conclusion unchanged: bottleneck is Supabase Edge/DB path, not GitHub runtime.
+
+## Iteration Update (2026-03-31, self-host + perf tracks)
+1. Track A prep (implemented in repo + validated on VPS)
+- Added self-host Supabase ops toolkit:
+  - `ops/self-host-supabase/bootstrap-vps.sh`
+  - `ops/self-host-supabase/deploy-supabase.sh`
+  - `ops/self-host-supabase/migrate-managed-to-selfhost.sh`
+  - `ops/self-host-supabase/backup-postgres.sh`
+  - `ops/self-host-supabase/healthcheck.sh`
+  - `ops/self-host-supabase/nginx-supabase.conf.template`
+  - `ops/self-host-supabase/cutover-checklist.md`
+- Verified on VPS:
+  - docker stack deployed and containers started,
+  - healthcheck script reachable (requires auth-aware status handling for 401 endpoints).
+  - `healthcheck.sh` updated to treat `200/401` as healthy for unauthenticated probes.
+  - fixed Realtime Docker healthcheck to accept auth-protected `403`; final container state: `healthy`.
+
+2. Track B app/perf (implemented)
+- Removed external CDN runtime dependencies from HTML pages:
+  - Tailwind runtime CDN removed, switched to prebuilt CSS (`shared/styles/app.css`).
+  - Self-hosted fonts and vendor JS.
+- Added split dashboard endpoints:
+  - `get-student-dashboard-core`
+  - `get-student-dashboard-plan`
+  - shared loader in `supabase/functions/_shared/dashboard.ts`.
+- Deployed updated functions to project `dvszkmkxamilxocawbml`:
+  - `get-student-dashboard-core`
+  - `get-student-dashboard-plan`
+  - `get-student-dashboard` (compat route)
+- Client loading refactor in `results.html`:
+  - core-first render + lazy heavy fetch,
+  - in-flight guards and debounce,
+  - removed duplicate post-login history fetch path.
+- Added SQL migration `supabase/sql/004_perf_indexes.sql` with indexes for:
+  - `test_results (user_id, completed_at desc)`
+  - `study_plan_versions (goal_id, version_no desc)`
+  - `plan_checkpoints (plan_version_id, scheduled_date)`
+- Applied `004_perf_indexes.sql` to linked Supabase via `supabase db query --linked`.
+- Verified index existence in `pg_indexes`:
+  - `test_results_user_completed_at_desc_idx`
+  - `study_plan_versions_goal_version_desc_idx`
+  - `plan_checkpoints_plan_version_scheduled_date_idx`
+
+3. Test runs (2026-03-31)
+- API baseline: PASS (`scripts/run_api_baseline_checks.mjs`)
+  - 500 unique questions in first 10 cycles, reset on 11th.
+- Unit checks: PASS (`scripts/run_unit_checks.mjs`)
+  - core/plan payload shape + target-level guard.
+  - fixed guard test fixture for `A0/Below A1` (negative target now `A0`, expecting `400`).
+- Endpoint smoke: PASS (`scripts/run_mvp_v3_endpoint_smoke.mjs`)
+  - including `admin-toggle-b1-plus`, `sync-attendance-airtable`, `analyze-attempt-mistakes` (`source=openai`).
+- Playwright E2E: PASS (`scripts/run_playwright_checks.mjs`)
+  - fixed flake by explicit radio `check()` + wait for enabled next button.
+- Perf probe: PASS (`scripts/run_latency_probe.mjs`)
+  - `get_student_dashboard_core` p95: `1025ms`
+  - `get_student_dashboard_plan` p95: `1148.9ms`
+  - `get_test_catalog` p95: `716.6ms`
+  - diagnosis unchanged: bottleneck in Supabase Edge/DB path.
+- SQL explain checks: PASS (`scripts/run_sql_explain_checks.sh`, linked mode)
+  - artifact: `.instructions/sql_explain_result.txt`
+
+4. Notes and remaining cutover actions
+- `scripts/run_sql_explain_checks.sh` now supports both `DATABASE_URL` and linked Supabase mode (`SUPABASE_ACCESS_TOKEN`).
+- Production secrets must be rotated after final migration/cutover.

@@ -6,11 +6,9 @@
   <title>АР | Личный кабинет ученика</title>
   <meta name="description" content="Личный кабинет ученика: тесты, цель, интерактивный календарь, бюджет, прогресс, сертификаты.">
   <link rel="icon" type="image/jpeg" href="photo_2026-03-09 16.49.05.jpeg">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="shared/vendor/iconify-icon.min.js"></script>
+  <link rel="stylesheet" href="shared/styles/fonts.css">
+  <link rel="stylesheet" href="shared/styles/app.css">
   <style>
     body { font-family: 'Montserrat', sans-serif; }
     .glass { backdrop-filter: blur(10px); background: rgba(255,255,255,0.72); }
@@ -275,7 +273,8 @@
     </div>
   </aside>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="shared/vendor/supabase-js.min.js"></script>
+  <script src="shared/config.js"></script>
   <script src="shared/auth.js"></script>
   <script>
     const WEEK_DAYS = [
@@ -292,6 +291,9 @@
     let currentUser = null;
     let dashboard = null;
     let allResults = [];
+    let dashboardCoreInflight = null;
+    let dashboardPlanInflight = null;
+    let dashboardPlanTimer = null;
     let calendarMode = 'month';
     let activeDraftId = null;
     let calendarCursorDate = null;
@@ -1032,31 +1034,82 @@
       `;
     }
 
-    async function loadResultsHistory() {
-      const client = authController.getClient();
-      const { data, error } = await client
-        .from('test_results')
-        .select('id,attempt_id,score,level,level_badge,mode,completed_at')
-        .eq('user_id', currentUser.id)
-        .order('completed_at', { ascending: false })
-        .limit(40);
-
-      if (error) throw error;
-      allResults = data || [];
+    function mergeDashboardCore(corePayload) {
+      const existingPlan = dashboard?.plan || { active: null, drafts: [], lessons: [], checkpoints: [] };
+      const quickActive = corePayload?.plan_summary?.active || existingPlan.active || null;
+      dashboard = {
+        ...(dashboard || {}),
+        ...(corePayload || {}),
+        plan: {
+          active: quickActive,
+          drafts: existingPlan.drafts || [],
+          lessons: existingPlan.lessons || [],
+          checkpoints: existingPlan.checkpoints || [],
+        },
+      };
     }
 
-    async function loadDashboard() {
-      dashboard = await callEdge('get-student-dashboard');
+    function mergeDashboardPlan(planPayload) {
+      dashboard = {
+        ...(dashboard || {}),
+        goal: planPayload?.goal ?? dashboard?.goal ?? null,
+        plan: {
+          active: planPayload?.plan?.active || dashboard?.plan?.active || null,
+          drafts: Array.isArray(planPayload?.plan?.drafts) ? planPayload.plan.drafts : (dashboard?.plan?.drafts || []),
+          lessons: Array.isArray(planPayload?.plan?.lessons) ? planPayload.plan.lessons : (dashboard?.plan?.lessons || []),
+          checkpoints: Array.isArray(planPayload?.plan?.checkpoints) ? planPayload.plan.checkpoints : (dashboard?.plan?.checkpoints || []),
+        },
+        certificates: Array.isArray(planPayload?.certificates) ? planPayload.certificates : (dashboard?.certificates || []),
+        insights: Array.isArray(planPayload?.insights) ? planPayload.insights : (dashboard?.insights || []),
+      };
+      allResults = Array.isArray(planPayload?.results_history) ? planPayload.results_history : allResults;
+    }
+
+    function renderDashboard() {
       document.getElementById('user-email').textContent = dashboard?.user?.email || '';
-      applyProfileState(dashboard.profile || {});
+      applyProfileState(dashboard?.profile || {});
       renderGoalInputs();
       renderStats();
       renderCalendar();
       renderInsights();
       renderCertificates();
       renderResults();
-
       document.getElementById('dog-toggle').classList.remove('hidden');
+    }
+
+    async function loadDashboardCore(force = false) {
+      if (dashboardCoreInflight && !force) return dashboardCoreInflight;
+      dashboardCoreInflight = (async () => {
+        const core = await callEdge('get-student-dashboard-core');
+        mergeDashboardCore(core);
+        renderDashboard();
+      })()
+        .finally(() => {
+          dashboardCoreInflight = null;
+        });
+      return dashboardCoreInflight;
+    }
+
+    async function loadDashboardPlan(force = false) {
+      if (dashboardPlanInflight && !force) return dashboardPlanInflight;
+      dashboardPlanInflight = (async () => {
+        const planPayload = await callEdge('get-student-dashboard-plan');
+        mergeDashboardPlan(planPayload);
+        renderDashboard();
+      })()
+        .finally(() => {
+          dashboardPlanInflight = null;
+        });
+      return dashboardPlanInflight;
+    }
+
+    function scheduleDashboardPlanRefresh(delay = 150) {
+      if (dashboardPlanTimer) clearTimeout(dashboardPlanTimer);
+      dashboardPlanTimer = setTimeout(() => {
+        loadDashboardPlan(true).catch((error) => {
+          console.error(error);
+        });
+      }, delay);
     }
 
     async function saveProfile() {
@@ -1070,7 +1123,8 @@
       });
 
       profileEditMode = false;
-      await loadDashboard();
+      await loadDashboardCore(true);
+      scheduleDashboardPlanRefresh(0);
     }
 
     async function createGoal() {
@@ -1092,7 +1146,8 @@
         source_attempt_id: dashboard?.latest_test_result?.attempt_id || null,
       });
 
-      await loadDashboard();
+      await loadDashboardCore(true);
+      scheduleDashboardPlanRefresh(0);
       setGoalConfigCollapsed(true);
     }
 
@@ -1114,7 +1169,8 @@
         preferred_days: preferredDays,
       });
 
-      await loadDashboard();
+      await loadDashboardCore(true);
+      scheduleDashboardPlanRefresh(0);
       setGoalConfigCollapsed(true);
     }
 
@@ -1128,7 +1184,8 @@
         plan_version_id: activeDraftId,
       });
 
-      await loadDashboard();
+      await loadDashboardCore(true);
+      scheduleDashboardPlanRefresh(0);
     }
 
     async function analyzeMistakes() {
@@ -1139,7 +1196,8 @@
       if (result?.source === 'fallback' && result?.openai_error) {
         console.warn('AI fallback reason:', result.openai_error);
       }
-      await loadDashboard();
+      await loadDashboardCore(true);
+      scheduleDashboardPlanRefresh(0);
     }
 
     function shiftCalendarCursor(direction) {
@@ -1176,7 +1234,8 @@
           showSection('dashboard-section');
           document.getElementById('logout-btn').classList.remove('hidden');
           document.getElementById('take-test-btn').classList.remove('hidden');
-          await Promise.all([loadResultsHistory(), loadDashboard()]);
+          await loadDashboardCore(true);
+          scheduleDashboardPlanRefresh(0);
         } catch (error) {
           setAuthError(error.message || 'Ошибка входа');
         }
@@ -1198,7 +1257,8 @@
           showSection('dashboard-section');
           document.getElementById('logout-btn').classList.remove('hidden');
           document.getElementById('take-test-btn').classList.remove('hidden');
-          await Promise.all([loadResultsHistory(), loadDashboard()]);
+          await loadDashboardCore(true);
+          scheduleDashboardPlanRefresh(0);
         } catch (error) {
           setAuthError(error.message || 'Ошибка регистрации');
         }
@@ -1290,7 +1350,8 @@
       document.getElementById('take-test-btn').classList.remove('hidden');
       showSection('dashboard-section');
 
-      await Promise.all([loadResultsHistory(), loadDashboard()]);
+      await loadDashboardCore(true);
+      scheduleDashboardPlanRefresh(0);
 
       const url = new URL(window.location.href);
       if (url.searchParams.get('open_goal') === '1') {
